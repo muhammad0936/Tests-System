@@ -38,6 +38,11 @@ const {
   getCourses,
   deleteCourse,
 } = require('../controllers/Admin/Course');
+const {
+  createVideo,
+  getVideos,
+  deleteVideo,
+} = require('../controllers/Admin/Video');
 
 router.post('/admin', multerGlobal, createAdmin);
 
@@ -86,5 +91,11 @@ router.post('/course', multerGlobal, isAuth, createCourse);
 router.get('/courses', multerGlobal, isAuth, getCourses);
 
 router.delete('/course/:id', multerGlobal, isAuth, deleteCourse);
+
+router.post('/video', multerGlobal, isAuth, createVideo);
+
+router.get('/videos', multerGlobal, isAuth, getVideos);
+
+router.delete('/video/:id', multerGlobal, isAuth, deleteVideo);
 
 module.exports = router;

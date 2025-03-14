@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate-v2');
 const Schema = mongoose.Schema;
 
-const courseSchema = new Schema(
+const videoSchema = new Schema(
   {
     name: {
       type: String,
@@ -20,7 +20,7 @@ const courseSchema = new Schema(
   },
   { timestamps: true }
 );
-courseSchema.plugin(mongoosePaginate);
-courseSchema.index({ course: 1 });
+videoSchema.plugin(mongoosePaginate);
+videoSchema.index({ course: 1 });
 
-module.exports = mongoose.model('Course', courseSchema);
+module.exports = mongoose.model('Video', videoSchema);
