@@ -4,48 +4,37 @@ const Schema = mongoose.Schema;
 
 const studentSchema = new Schema(
   {
-    fname: {
-      type: String,
-      required: true,
-    },
-    lname: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    phone: {
-      type: String,
-      unique: true,
-      required: true,
-    },
+    fname: { type: String, required: true },
+    lname: { type: String, required: true },
+    email: { type: String, unique: true, sparse: true },
+    password: { type: String, required: true },
+    phone: { type: String, unique: true, required: true },
     image: {
       url: String,
       publicId: String,
     },
-    year: {
-      type: Number,
-      required: true,
-    },
-    codes: [
+    year: { type: Number, required: true },
+    redeemedCodes: [
       {
-        type: Schema.Types.ObjectId,
-        ref: 'Code',
-        required: true,
+        code: {
+          type: String,
+          required: true,
+        },
+        codesGroup: {
+          type: Schema.Types.ObjectId,
+          ref: 'CodesGroup',
+          required: true,
+        },
+        redeemedAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
     favorites: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Question',
-        required: true,
       },
     ],
     resetToken: String,
@@ -53,6 +42,20 @@ const studentSchema = new Schema(
   },
   { timestamps: true }
 );
-studentSchema.plugin(mongoosePaginate);
 
+// studentSchema.pre('save', async function (next) {
+//   if (this.isModified('password')) {
+//     this.password = await myPasswordHashingFunction(this.password);
+//   }
+//   next();
+// });
+
+studentSchema.plugin(mongoosePaginate);
+studentSchema.index(
+  { 'redeemedCodes.code': 1, 'redeemedCodes.codesGroup': 1 },
+  {
+    unique: true,
+    partialFilterExpression: { 'redeemedCodes.code': { $exists: true } },
+  }
+);
 module.exports = mongoose.model('Student', studentSchema);
