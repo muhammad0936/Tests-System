@@ -23,21 +23,26 @@ exports.createCollege = [
     .withMessage('Icon public ID must be a string'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
-      const college = new College(req.body);
-      await college.save();
-      const { _id, name, icon, university } = college;
-      const universityExists = await University.exists({ _id: university });
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const universityExists = await University.exists({
+        _id: req.body.university,
+      });
       if (!universityExists) {
         return res.status(400).json({ message: 'University not found!' });
       }
-      res.status(201).json({ college: { _id, name, icon, university } });
+      const college = new College(req.body);
+      await college.save();
+      const { _id, name, icon, university, numOfYears } = college;
+
+      res
+        .status(201)
+        .json({ college: { _id, name, icon, university, numOfYears } });
     } catch (err) {
       res
         .status(err.statusCode || 500)

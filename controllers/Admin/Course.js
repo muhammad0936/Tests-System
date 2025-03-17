@@ -33,12 +33,18 @@ exports.createCourse = [
     .isString()
     .withMessage('PromoVideo480 public ID must be a string'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const teacherExists = await Teacher.exists({ _id: req.body.teacher });
+      if (!teacherExists)
+        return res.status(400).json({ message: 'Teacher not found' });
+      const materialExists = await Material.exists({ _id: req.body.material });
+      if (!materialExists)
+        return res.status(400).json({ message: 'Material not found' });
       const course = new Course(req.body);
       await course.save();
       const {

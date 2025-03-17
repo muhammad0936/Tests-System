@@ -43,12 +43,15 @@ exports.createQuestion = [
     .isMongoId()
     .withMessage('Invalid Material ID'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const materialExists = await Material.exists({ _id: req.body.material });
+      if (!materialExists)
+        return res.status(400).json({ message: 'Material not found!' });
       const question = new Question(req.body);
       await question.save();
       const {
