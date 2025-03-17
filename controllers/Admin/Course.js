@@ -16,6 +16,22 @@ exports.createCourse = [
     .withMessage('Course description must be string'),
   body('material').isMongoId().withMessage('Invalid Material ID'),
   body('teacher').isMongoId().withMessage('Invalid Teacher ID'),
+  body('PromoVideo720.url')
+    .optional()
+    .isURL()
+    .withMessage('PromoVideo720 URL must be valid'),
+  body('PromoVideo720.publicId')
+    .optional()
+    .isString()
+    .withMessage('PromoVideo720 public ID must be a string'),
+  body('PromoVideo480.url')
+    .optional()
+    .isURL()
+    .withMessage('PromoVideo480 URL must be valid'),
+  body('PromoVideo480.publicId')
+    .optional()
+    .isString()
+    .withMessage('PromoVideo480 public ID must be a string'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -25,9 +41,25 @@ exports.createCourse = [
     try {
       const course = new Course(req.body);
       await course.save();
-      const { _id, name, description, material, teacher } = course;
+      const {
+        _id,
+        name,
+        description,
+        material,
+        teacher,
+        promoVideo720,
+        promoVideo480,
+      } = course;
       res.status(201).json({
-        course: { _id, name, description, material, teacher },
+        course: {
+          _id,
+          name,
+          description,
+          material,
+          teacher,
+          promoVideo720,
+          promoVideo480,
+        },
       });
     } catch (err) {
       res
@@ -177,7 +209,7 @@ exports.getCourses = async (req, res) => {
         { path: 'material', select: 'name' },
         { path: 'teacher', select: 'fname lname phone' },
       ],
-      select: 'name description material teacher',
+      select: 'name description material teacher promoVideo720 promoVideo480',
     });
 
     return res.status(200).json(courses);

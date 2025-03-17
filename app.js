@@ -14,6 +14,7 @@ const bodyParser = require('body-parser');
 //routers
 
 const adminRouter = require('./routes/Admin');
+const studentRouter = require('./routes/Student');
 
 const connectToDatabase = require('./database/connection');
 
@@ -48,6 +49,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use('/admin', adminRouter);
+app.use('/', studentRouter);
 app.use((req, res, next) => {
   // if (req.files) {
   //   const files = req.files;

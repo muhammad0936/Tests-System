@@ -19,6 +19,14 @@ const courseSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Teacher',
     },
+    promoVideo720: {
+      url: String,
+      publicId: String,
+    },
+    promoVideo480: {
+      url: String,
+      publicId: String,
+    },
   },
   { timestamps: true }
 );

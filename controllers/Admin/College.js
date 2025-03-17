@@ -11,6 +11,11 @@ exports.createCollege = [
     .withMessage('University ID is required')
     .isMongoId()
     .withMessage('Invalid University ID'),
+  body('numOfYears')
+    .notEmpty()
+    .withMessage('Number of years is required')
+    .isNumeric()
+    .withMessage('Number of years must be number'),
   body('icon.url').optional().isURL().withMessage('Icon URL must be valid'),
   body('icon.publicId')
     .optional()
@@ -28,7 +33,10 @@ exports.createCollege = [
       const college = new College(req.body);
       await college.save();
       const { _id, name, icon, university } = college;
-
+      const universityExists = await University.exists({ _id: university });
+      if (!universityExists) {
+        return res.status(400).json({ message: 'University not found!' });
+      }
       res.status(201).json({ college: { _id, name, icon, university } });
     } catch (err) {
       res

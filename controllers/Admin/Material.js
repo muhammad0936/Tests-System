@@ -29,10 +29,12 @@ exports.createMaterial = [
       return res.status(400).json({ errors: errors.array() });
     }
     try {
+      const college = await College.exists({ _id: college });
+      if (!college)
+        return res.status(400).json({ message: 'College not found!' });
       const material = new Material(req.body);
       await material.save();
-      const { _id, name, year, color, icon, college, createdAt, updatedAt } =
-        material;
+      const { _id, name, year, color, icon } = material;
       res.status(201).json({
         material: { _id, name, year, color, icon },
       });

@@ -14,7 +14,6 @@ const codesGroupSchema = new Schema(
         value: {
           type: String,
           required: true,
-          unique: true,
         },
         isUsed: {
           type: Boolean,
@@ -48,12 +47,12 @@ const codesGroupSchema = new Schema(
   { timestamps: true }
 );
 codesGroupSchema.index(
-  {
-    'codes.value': 1,
-  },
+  { 'codes.value': 1 },
   {
     unique: true,
-    partialFilterExpression: { 'codes.value': { $exists: true } },
+    partialFilterExpression: {
+      'codes.value': { $exists: true },
+    },
   }
 );
 

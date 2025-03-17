@@ -17,6 +17,10 @@ const collegeSchema = new Schema(
       ref: 'University',
       required: true,
     },
+    numOfYears: {
+      type: Number,
+      required: true,
+    },
   },
   { timestamps: true }
 );

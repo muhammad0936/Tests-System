@@ -8,7 +8,11 @@ const videoSchema = new Schema(
       type: String,
       required: true,
     },
-    video: {
+    video720: {
+      url: String,
+      publicId: String,
+    },
+    video480: {
       url: String,
       publicId: String,
     },

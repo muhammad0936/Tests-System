@@ -8,14 +8,22 @@ const { body, param, validationResult } = require('express-validator');
 exports.createVideo = [
   body('name').notEmpty().withMessage('Video name is required'),
   body('course').isMongoId().withMessage('Invalid Course ID'),
-  body('video.url')
+  body('video720.url')
     .optional()
     .isString()
-    .withMessage('Video URL must be a string'),
-  body('video.publicId')
+    .withMessage('Video720 URL must be a string'),
+  body('video720.publicId')
     .optional()
     .isString()
-    .withMessage('Video publicId must be a string'),
+    .withMessage('Video720 publicId must be a string'),
+  body('video480.url')
+    .optional()
+    .isString()
+    .withMessage('Video480 URL must be a string'),
+  body('video480.publicId')
+    .optional()
+    .isString()
+    .withMessage('Video480 publicId must be a string'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -32,9 +40,9 @@ exports.createVideo = [
       await video.save();
 
       // Destructure to send back an appropriate response
-      const { _id, name, video: videoDetails, course } = video;
+      const { _id, name, video720, video480, course } = video;
       res.status(201).json({
-        video: { _id, name, video: videoDetails, course },
+        video: { _id, name, video720, video480, course },
       });
     } catch (err) {
       res
@@ -73,7 +81,7 @@ exports.getVideos = async (req, res) => {
       page: parseInt(page, 10) || 1,
       limit: parseInt(limit, 10) || 10,
       populate: { path: 'course', select: 'name description' },
-      select: 'name video course',
+      select: 'name video course video720 video480',
     });
 
     res.status(200).json(videos);
