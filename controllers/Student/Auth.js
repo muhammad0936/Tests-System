@@ -100,7 +100,7 @@ exports.signup = [
         });
       if (loadedCollege.numOfYears < year)
         return res.status(400).json({
-          message: `Chosen college has just ${loadedCollege.numOfYears}, you choosed ${year}`,
+          message: `Chosen college has just ${loadedCollege.numOfYears} years, you choosed ${year}`,
         });
       const emailExists = await Student.exists({ email });
       if (emailExists) {

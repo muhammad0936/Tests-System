@@ -69,7 +69,7 @@ exports.getColleges = async (req, res) => {
     const colleges = await College.paginate(filter, {
       page: page || 1,
       limit: limit || 10,
-      select: 'name icon university',
+      select: 'name icon university numOfYears',
       populate: { path: 'university', select: 'name' }, // Populate university details
     });
 
@@ -92,7 +92,7 @@ exports.getCollegeById = [
 
     try {
       const college = await College.findById(req.params.id)
-        .select('name icon university')
+        .select('name icon university numOfYears')
         .populate({ path: 'university', select: 'name' }); // Populate university details
       if (!college) {
         return res.status(404).json({ error: 'College not found' });
@@ -112,6 +112,10 @@ exports.updateCollege = [
     .optional()
     .isMongoId()
     .withMessage('Invalid University ID'),
+  body('numOfYears')
+    .optional()
+    .isNumeric()
+    .withMessage('Number of years must be number'),
   body('icon.url').optional().isURL().withMessage('Icon URL must be valid'),
   body('icon.publicId')
     .optional()
@@ -126,14 +130,17 @@ exports.updateCollege = [
     }
 
     try {
+      console.log(req.body);
       const college = await College.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
       });
       if (!college) {
         return res.status(404).json({ error: 'College not found' });
       }
-      const { _id, name, icon, university } = college;
-      res.status(200).json({ college: { _id, name, icon, university } });
+      const { _id, name, icon, university, numOfYears } = college;
+      res
+        .status(200)
+        .json({ college: { _id, name, icon, university, numOfYears } });
     } catch (err) {
       res.status(500).json({ error: 'Server error' });
     }

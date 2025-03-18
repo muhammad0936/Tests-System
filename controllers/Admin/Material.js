@@ -30,9 +30,14 @@ exports.createMaterial = [
     }
     try {
       const { college } = req.body;
-      const collegeExists = await College.exists({ _id: college });
-      if (!collegeExists)
+      const loadedCollege = await College.findById(college);
+      if (!loadedCollege)
         return res.status(400).json({ message: 'College not found!' });
+      console.log(loadedCollege, req.body.year);
+      if (loadedCollege.numOfYears < req.body.year || req.body.year <= 0)
+        return res.status(400).json({
+          message: `Provided college has ${loadedCollege.numOfYears} yaers, and provided year is ${req.body.year}`,
+        });
       const material = new Material(req.body);
       await material.save();
       const { _id, name, year, color, icon } = material;

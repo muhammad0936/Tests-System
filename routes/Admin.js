@@ -51,6 +51,7 @@ const {
   exportCodesPDF,
   exportCodeCardsPDF,
 } = require('../controllers/Admin/CodesGroup');
+const { copyQuestionsToFree } = require('../controllers/Admin/FreeQuestion');
 
 router.post('/admin', multerGlobal, createAdmin);
 router.post('/login', multerGlobal, login);
@@ -92,5 +93,7 @@ router.get('/codesGroups', multerGlobal, isAuth, getCodesGroups);
 router.get('/codes/:id', multerGlobal, isAuth, getCodesFromGroup);
 router.delete('/codesGroup/:id', multerGlobal, isAuth, deleteCodesGroup);
 router.get('/codesGroup/:id/export-pdf', multerGlobal, exportCodeCardsPDF);
+
+router.post('/changeFreeQuestions', multerGlobal, isAuth, copyQuestionsToFree);
 
 module.exports = router;
