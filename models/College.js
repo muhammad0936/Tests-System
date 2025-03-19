@@ -25,5 +25,10 @@ const collegeSchema = new Schema(
   { timestamps: true }
 );
 collegeSchema.plugin(mongoosePaginate);
-
+// In College schema
+collegeSchema.virtual('materials', {
+  ref: 'Material',
+  localField: '_id',
+  foreignField: 'College',
+});
 module.exports = mongoose.model('College', collegeSchema);

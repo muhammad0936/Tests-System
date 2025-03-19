@@ -84,7 +84,7 @@ exports.createQuestion = [
 exports.getQuestions = async (req, res) => {
   try {
     await ensureIsAdmin(req.userId);
-    const { limit, material } = req.query;
+    const { limit = 10, page = 1, material } = req.query;
 
     if (!material) {
       return res.status(400).json({ message: 'Material is required!' });
@@ -96,25 +96,25 @@ exports.getQuestions = async (req, res) => {
       return res.status(400).json({ message: 'Material not found!' });
     }
 
-    const sampleSize = parseInt(limit, 10) || 10;
+    const pageSize = parseInt(limit, 10);
+    const currentPage = parseInt(page, 10);
     const filter = { material: new mongoose.Types.ObjectId(material) };
 
-    // Use aggregation pipeline with $match and $sample for random selection
-    const questions = await Question.aggregate([
-      { $match: filter },
-      { $sample: { size: sampleSize } },
-    ]);
+    // Fetch total number of documents for pagination metadata
+    const totalQuestions = await Question.countDocuments(filter);
 
-    // Optionally populate the material details (like name) in the returned questions.
-    // Since aggregation returns plain objects, we can use Mongoose's populate afterwards.
-    const populatedQuestions = await Question.populate(questions, {
-      path: 'material',
-      select: 'name',
-    });
+    // Use pagination with skip and limit
+    const questions = await Question.find(filter)
+      .skip((currentPage - 1) * pageSize)
+      .limit(pageSize)
+      .populate('material', 'name'); // Populate material details if necessary
 
     res.status(200).json({
-      docs: populatedQuestions,
-      limit: sampleSize,
+      docs: questions,
+      totalDocs: totalQuestions,
+      limit: pageSize,
+      page: currentPage,
+      totalPages: Math.ceil(totalQuestions / pageSize),
     });
   } catch (err) {
     res
