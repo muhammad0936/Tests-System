@@ -5,11 +5,14 @@ const { body, param, validationResult } = require('express-validator');
 // Create a new university
 exports.createUniversity = [
   // Validate only complex fields
-  body('icon.url').optional().isURL().withMessage('Icon URL must be valid'),
+  body('icon.url')
+    .optional()
+    .isURL()
+    .withMessage('يجب أن يكون رابط الأيقونة صالحاً.'),
   body('icon.publicId')
     .optional()
     .isString()
-    .withMessage('Icon public ID must be a string'),
+    .withMessage('يجب أن يكون المعرف العام للأيقونة نصاً.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -27,7 +30,7 @@ exports.createUniversity = [
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];
@@ -39,17 +42,17 @@ exports.getUniversities = async (req, res) => {
     const { page, limit } = req.query;
     const universities = await University.paginate(
       {},
-      { page: page || 1, limit: limit || 10, select: ' name icon' }
+      { page: page || 1, limit: limit || 10, select: 'name icon' }
     );
     res.status(200).json(universities);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'حدث خطأ في الخادم.' });
   }
 };
 
 // Get a university by ID
 exports.getUniversityById = [
-  param('id').isMongoId().withMessage('Invalid university ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -63,23 +66,28 @@ exports.getUniversityById = [
         'name icon'
       );
       if (!university) {
-        return res.status(404).json({ error: 'University not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على الجامعة.' });
       }
       res.status(200).json(university);
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
     }
   },
 ];
 
 // Update a university by ID
 exports.updateUniversity = [
-  param('id').isMongoId().withMessage('Invalid university ID'),
-  body('icon.url').optional().isURL().withMessage('Icon URL must be valid'),
+  param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
+  body('icon.url')
+    .optional()
+    .isURL()
+    .withMessage('يجب أن يكون رابط الأيقونة صالحاً.'),
   body('icon.publicId')
     .optional()
     .isString()
-    .withMessage('Icon public ID must be a string'),
+    .withMessage('يجب أن يكون المعرف العام للأيقونة نصاً.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -95,19 +103,21 @@ exports.updateUniversity = [
         { new: true }
       );
       if (!university) {
-        return res.status(404).json({ error: 'University not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على الجامعة.' });
       }
       const { _id, name, icon = '' } = university;
       res.status(200).json({ university: { _id, name, icon } });
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
     }
   },
 ];
 
 // Delete a university by ID
 exports.deleteUniversity = [
-  param('id').isMongoId().withMessage('Invalid university ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -119,12 +129,14 @@ exports.deleteUniversity = [
     try {
       const university = await University.findByIdAndDelete(req.params.id);
       if (!university) {
-        return res.status(404).json({ error: 'University not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على الجامعة.' });
       }
 
-      res.status(200).json({ message: 'University deleted successfully' });
+      res.status(200).json({ message: 'تم حذف الجامعة بنجاح.' });
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
     }
   },
 ];

@@ -6,24 +6,24 @@ const { body, param, validationResult } = require('express-validator');
 
 // Create a new video
 exports.createVideo = [
-  body('name').notEmpty().withMessage('Video name is required'),
-  body('course').isMongoId().withMessage('Invalid Course ID'),
+  body('name').notEmpty().withMessage('اسم الفيديو مطلوب.'),
+  body('course').isMongoId().withMessage('معرف الدورة غير صالح.'),
   body('video720.url')
     .optional()
     .isString()
-    .withMessage('Video720 URL must be a string'),
+    .withMessage('يجب أن يكون رابط فيديو 720 نصاً.'),
   body('video720.publicId')
     .optional()
     .isString()
-    .withMessage('Video720 publicId must be a string'),
+    .withMessage('يجب أن يكون المعرف العام لفيديو 720 نصاً.'),
   body('video480.url')
     .optional()
     .isString()
-    .withMessage('Video480 URL must be a string'),
+    .withMessage('يجب أن يكون رابط فيديو 480 نصاً.'),
   body('video480.publicId')
     .optional()
     .isString()
-    .withMessage('Video480 publicId must be a string'),
+    .withMessage('يجب أن يكون المعرف العام لفيديو 480 نصاً.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -34,7 +34,9 @@ exports.createVideo = [
       // Verify if the associated course exists
       const courseExists = await Course.exists({ _id: req.body.course });
       if (!courseExists) {
-        return res.status(400).json({ message: 'Course not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على الدورة.' });
       }
       const video = new Video(req.body);
       await video.save();
@@ -47,7 +49,7 @@ exports.createVideo = [
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];
@@ -66,13 +68,15 @@ exports.getVideos = async (req, res) => {
     }
 
     if (!course) {
-      return res.status(400).json({ message: 'Course must be provided!' });
+      return res.status(400).json({ message: 'معرف الدورة مطلوب.' });
     }
 
     // Verify if the provided course exists
     const courseExists = await Course.exists({ _id: course });
     if (!courseExists) {
-      return res.status(400).json({ message: 'Course not found!' });
+      return res
+        .status(400)
+        .json({ message: 'عذراً، لم يتم العثور على الدورة.' });
     }
     filter.course = new mongoose.Types.ObjectId(course);
 
@@ -88,13 +92,13 @@ exports.getVideos = async (req, res) => {
   } catch (err) {
     res
       .status(err.statusCode || 500)
-      .json({ error: err.message || 'Server error' });
+      .json({ error: err.message || 'حدث خطأ في الخادم.' });
   }
 };
 
 // Delete a video by ID
 exports.deleteVideo = [
-  param('id').isMongoId().withMessage('Invalid Video ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال معرف الفيديو بشكل صحيح.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -104,13 +108,15 @@ exports.deleteVideo = [
     try {
       const video = await Video.findByIdAndDelete(req.params.id);
       if (!video) {
-        return res.status(404).json({ error: 'Video not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على الفيديو.' });
       }
-      res.status(200).json({ message: 'Video deleted successfully' });
+      res.status(200).json({ message: 'تم حذف الفيديو بنجاح.' });
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];

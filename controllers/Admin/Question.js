@@ -7,41 +7,42 @@ const { default: mongoose } = require('mongoose');
 
 // Create a new question
 exports.createQuestion = [
-  body('text').notEmpty().withMessage('Question text is required'),
+  body('text').notEmpty().withMessage('نص السؤال مطلوب.'),
   body('isMultipleChoice')
     .optional()
     .isBoolean()
-    .withMessage('isMultipleChoice must be a boolean'),
+    .withMessage('يجب أن يكون isMultipleChoice قيمة منطقية.'),
   // If choices are provided for multiple choice questions, validate them.
   body('choices')
     .if((value, { req }) => req.body.isMultipleChoice)
     .isArray({ min: 1 })
-    .withMessage(
-      'At least one choice is required for multiple choice questions'
-    ),
+    .withMessage('يجب إدخال خيار واحد على الأقل للأسئلة متعددة الاختيارات.'),
   body('choices.*.text')
     .if(body('choices').exists())
     .notEmpty()
-    .withMessage('Choice text is required'),
+    .withMessage('نص الاختيار مطلوب.'),
   body('choices.*.isCorrect')
     .if(body('choices').exists())
     .optional()
     .isBoolean()
-    .withMessage('Choice isCorrect must be a boolean'),
+    .withMessage('يجب أن يكون isCorrect قيمة منطقية.'),
   body('information')
     .optional()
     .isString()
-    .withMessage('Information is required'),
-  body('image.url').optional().isURL().withMessage('Image URL must be valid'),
+    .withMessage('يجب أن تكون المعلومات نصاً.'),
+  body('image.url')
+    .optional()
+    .isURL()
+    .withMessage('يجب أن يكون رابط الصورة صالحاً.'),
   body('image.publicId')
     .optional()
     .isString()
-    .withMessage('Image publicId must be a string'),
+    .withMessage('يجب أن يكون معرف الصورة نصاً.'),
   body('material')
     .notEmpty()
-    .withMessage('Material ID is required')
+    .withMessage('معرف المادة مطلوب.')
     .isMongoId()
-    .withMessage('Invalid Material ID'),
+    .withMessage('معرف المادة غير صالح.'),
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
@@ -51,7 +52,9 @@ exports.createQuestion = [
       }
       const materialExists = await Material.exists({ _id: req.body.material });
       if (!materialExists)
-        return res.status(400).json({ message: 'Material not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على المادة.' });
       const question = new Question(req.body);
       await question.save();
       const {
@@ -77,23 +80,26 @@ exports.createQuestion = [
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];
+
 exports.getQuestions = async (req, res) => {
   try {
     await ensureIsAdmin(req.userId);
     const { limit = 10, page = 1, material } = req.query;
 
     if (!material) {
-      return res.status(400).json({ message: 'Material is required!' });
+      return res.status(400).json({ message: 'معرف المادة مطلوب.' });
     }
 
     // Check if the provided material exists
     const materialExists = await Material.exists({ _id: material });
     if (!materialExists) {
-      return res.status(400).json({ message: 'Material not found!' });
+      return res
+        .status(400)
+        .json({ message: 'عذراً، لم يتم العثور على المادة.' });
     }
 
     const pageSize = parseInt(limit, 10);
@@ -119,13 +125,13 @@ exports.getQuestions = async (req, res) => {
   } catch (err) {
     res
       .status(err.statusCode || 500)
-      .json({ error: err.message || 'Server error' });
+      .json({ error: err.message || 'حدث خطأ في الخادم.' });
   }
 };
 
 // Delete a question by ID
 exports.deleteQuestion = [
-  param('id').isMongoId().withMessage('Invalid Question ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال معرف السؤال بشكل صحيح.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -135,13 +141,15 @@ exports.deleteQuestion = [
     try {
       const question = await Question.findByIdAndDelete(req.params.id);
       if (!question) {
-        return res.status(404).json({ error: 'Question not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على السؤال.' });
       }
-      res.status(200).json({ message: 'Question deleted successfully' });
+      res.status(200).json({ message: 'تم حذف السؤال بنجاح.' });
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];

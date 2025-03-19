@@ -8,12 +8,13 @@ const Admin = require('../../models/Admin');
 
 exports.createAdmin = [
   // Validate only complex fields
-  body('lname').isString().withMessage('lname must be provided as string'),
-  body('fname').optional().isString().withMessage('fname must be string'),
-  body('password')
+  body('fname').isString().withMessage('يرجى إدخال الاسم الأول كنص.'),
+  body('lname')
+    .optional()
     .isString()
-    .withMessage('password must be provided as string'),
-  body('phone').isNumeric().withMessage('phone must be provided as number'),
+    .withMessage('يرجى إدخال اسم العائلة كنص.'),
+  body('password').isString().withMessage('يرجى إدخال كلمة المرور كنص.'),
+  body('phone').isNumeric().withMessage('يرجى إدخال رقم الهاتف بشكل صحيح.'),
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
@@ -24,7 +25,7 @@ exports.createAdmin = [
 
       const existingAdmin = await Admin.findOne({ phone });
       if (existingAdmin) {
-        const error = new Error('This phone already exists!');
+        const error = new Error('عذرًا، يبدو أن رقم الهاتف هذا مسجل بالفعل.');
         error.statusCode = 400;
         throw error;
       }
@@ -36,7 +37,9 @@ exports.createAdmin = [
         password: hashedPassword,
       });
       await admin.save();
-      res.status(201).json({ message: 'Admin added successfully.' });
+      res
+        .status(201)
+        .json({ message: 'تمت إضافة المسؤول بنجاح، مرحبًا بك معنا!' });
     } catch (err) {
       if (!err.statusCode && !err[0]) err.statusCode = 500;
       next(err);
@@ -46,10 +49,8 @@ exports.createAdmin = [
 
 // Login Admin
 exports.login = [
-  body('phone').isNumeric().withMessage('phone must be provided as number'),
-  body('password')
-    .isString()
-    .withMessage('password must be provided as string'),
+  body('phone').isNumeric().withMessage('يرجى إدخال رقم الهاتف بشكل صحيح.'),
+  body('password').isString().withMessage('يرجى إدخال كلمة المرور كنص.'),
   async (req, res, next) => {
     try {
       const errors = validationResult(req);
@@ -60,13 +61,17 @@ exports.login = [
       const loadedAdmin = await Admin.findOne({ phone });
 
       if (!loadedAdmin) {
-        const error = new Error('Phone or password is incorrect!');
+        const error = new Error(
+          'رقم الهاتف أو كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى.'
+        );
         error.statusCode = 401;
         throw error;
       }
       const isEqual = await bcrypt.compare(password, loadedAdmin.password);
       if (!isEqual) {
-        const error = new Error('Phone or password is incorrect!');
+        const error = new Error(
+          'رقم الهاتف أو كلمة المرور غير صحيحة، يرجى التأكد والمحاولة مجددًا.'
+        );
         error.statusCode = 401;
         throw error;
       }
@@ -80,7 +85,10 @@ exports.login = [
       );
       res
         .status(200)
-        .json({ message: 'signed in successfully.', JWT: `Bearer ${token}` });
+        .json({
+          message: 'تم تسجيل الدخول بنجاح، سعداء بوجودك معنا!',
+          JWT: `Bearer ${token}`,
+        });
     } catch (error) {
       if (!error.statusCode && !error[0]) error.statusCode = 500;
       next(error);

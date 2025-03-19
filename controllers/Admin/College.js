@@ -5,22 +5,25 @@ const University = require('../../models/University');
 
 // Create a new college
 exports.createCollege = [
-  body('name').notEmpty().withMessage('College name is required'),
+  body('name').notEmpty().withMessage('يرجى إدخال اسم الكلية.'),
   body('university')
     .notEmpty()
-    .withMessage('University ID is required')
+    .withMessage('رقم تعريف الجامعة مطلوب.')
     .isMongoId()
-    .withMessage('Invalid University ID'),
+    .withMessage('رقم تعريف الجامعة غير صحيح.'),
   body('numOfYears')
     .notEmpty()
-    .withMessage('Number of years is required')
+    .withMessage('عدد السنوات مطلوب.')
     .isNumeric()
-    .withMessage('Number of years must be number'),
-  body('icon.url').optional().isURL().withMessage('Icon URL must be valid'),
+    .withMessage('يجب إدخال عدد السنوات كرقم.'),
+  body('icon.url')
+    .optional()
+    .isURL()
+    .withMessage('رابط الأيقونة يجب أن يكون صالحاً.'),
   body('icon.publicId')
     .optional()
     .isString()
-    .withMessage('Icon public ID must be a string'),
+    .withMessage('معرف الأيقونة يجب أن يكون نصاً.'),
 
   async (req, res) => {
     try {
@@ -34,7 +37,9 @@ exports.createCollege = [
         _id: req.body.university,
       });
       if (!universityExists) {
-        return res.status(400).json({ message: 'University not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذرًا، لم يتم العثور على الجامعة.' });
       }
       const college = new College(req.body);
       await college.save();
@@ -46,7 +51,7 @@ exports.createCollege = [
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
 ];
@@ -59,11 +64,13 @@ exports.getColleges = async (req, res) => {
 
     const filter = {};
     if (!university) {
-      return res.status(400).json({ message: 'university is required!' });
+      return res.status(400).json({ message: 'يرجى تحديد الجامعة المطلوبة.' });
     }
     const universityExists = await University.exists({ _id: university });
     if (!universityExists) {
-      return res.status(400).json({ message: 'University not found!' });
+      return res
+        .status(400)
+        .json({ message: 'عذرًا، لم يتم العثور على الجامعة.' });
     }
     filter.university = university;
     const colleges = await College.paginate(filter, {
@@ -75,13 +82,15 @@ exports.getColleges = async (req, res) => {
 
     res.status(200).json(colleges);
   } catch (err) {
-    res.status(500).json({ error: err.message || 'Server error' });
+    res
+      .status(500)
+      .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
   }
 };
 
 // Get a college by ID
 exports.getCollegeById = [
-  param('id').isMongoId().withMessage('Invalid College ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الكلية بشكل صحيح.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -95,32 +104,37 @@ exports.getCollegeById = [
         .select('name icon university numOfYears')
         .populate({ path: 'university', select: 'name' }); // Populate university details
       if (!college) {
-        return res.status(404).json({ error: 'College not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذرًا، لم يتم العثور على الكلية.' });
       }
       res.status(200).json(college);
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
 ];
 
 // Update a college by ID
 exports.updateCollege = [
-  param('id').isMongoId().withMessage('Invalid College ID'),
-  body('name').optional().notEmpty().withMessage('College name is required'),
+  param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الكلية بشكل صحيح.'),
+  body('name').optional().notEmpty().withMessage('يرجى إدخال اسم الكلية.'),
   body('university')
     .optional()
     .isMongoId()
-    .withMessage('Invalid University ID'),
+    .withMessage('رقم تعريف الجامعة غير صحيح.'),
   body('numOfYears')
     .optional()
     .isNumeric()
-    .withMessage('Number of years must be number'),
-  body('icon.url').optional().isURL().withMessage('Icon URL must be valid'),
+    .withMessage('يجب إدخال عدد السنوات كرقم.'),
+  body('icon.url')
+    .optional()
+    .isURL()
+    .withMessage('رابط الأيقونة يجب أن يكون صالحاً.'),
   body('icon.publicId')
     .optional()
     .isString()
-    .withMessage('Icon public ID must be a string'),
+    .withMessage('معرف الأيقونة يجب أن يكون نصاً.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -130,26 +144,27 @@ exports.updateCollege = [
     }
 
     try {
-      console.log(req.body);
       const college = await College.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
       });
       if (!college) {
-        return res.status(404).json({ error: 'College not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذرًا، لم يتم العثور على الكلية.' });
       }
       const { _id, name, icon, university, numOfYears } = college;
       res
         .status(200)
         .json({ college: { _id, name, icon, university, numOfYears } });
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
 ];
 
 // Delete a college by ID
 exports.deleteCollege = [
-  param('id').isMongoId().withMessage('Invalid College ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الكلية بشكل صحيح.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -161,11 +176,13 @@ exports.deleteCollege = [
     try {
       const college = await College.findByIdAndDelete(req.params.id);
       if (!college) {
-        return res.status(404).json({ error: 'College not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذرًا، لم يتم العثور على الكلية.' });
       }
-      res.status(200).json({ message: 'College deleted successfully' });
+      res.status(200).json({ message: 'تم حذف الكلية بنجاح.' });
     } catch (err) {
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
 ];

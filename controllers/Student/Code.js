@@ -7,9 +7,9 @@ exports.redeemCode = [
   body('code')
     .trim()
     .notEmpty()
-    .withMessage('code is required')
+    .withMessage('الكود مطلوب.')
     .isLength({ min: 12, max: 12 })
-    .withMessage('code must be 12 characters'),
+    .withMessage('يجب أن يكون طول الكود 12 حرفاً.'),
 
   async (req, res, next) => {
     const errors = validationResult(req);
@@ -31,24 +31,28 @@ exports.redeemCode = [
       ).session(session);
 
       if (!codesGroup) {
-        return res.status(404).json({ error: 'Code not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على الكود.' });
       }
 
       // 2. Check code status and expiration
       const targetCode = codesGroup.codes[0];
       if (targetCode.isUsed) {
-        return res.status(400).json({ error: 'Code already used' });
+        return res.status(400).json({ error: 'الكود مستخدم بالفعل.' });
       }
 
       if (new Date() > codesGroup.expiration) {
-        return res.status(400).json({ error: 'Codes group has expired' });
+        return res
+          .status(400)
+          .json({ error: 'مجموعة الأكواد منتهية الصلاحية.' });
       }
 
       // 3. Check student hasn't redeemed from this group
       const student = await Student.findById(studentId)
         .session(session)
         .select('redeemedCodes');
-      if (!student) return res.status(401).json({ message: 'Unauthorized!' });
+      if (!student) return res.status(401).json({ message: 'غير مصرح!' });
 
       const existingRedemption = student.redeemedCodes?.some((redemption) =>
         redemption?.codesGroup?.equals(codesGroup._id)
@@ -56,7 +60,7 @@ exports.redeemCode = [
 
       if (existingRedemption) {
         return res.status(409).json({
-          error: 'Already redeemed code from this group',
+          error: 'لقد قمت باسترداد كود من هذه المجموعة مسبقاً.',
         });
       }
 
@@ -81,7 +85,7 @@ exports.redeemCode = [
       session.endSession();
 
       res.status(200).json({
-        message: 'Code redeemed successfully',
+        message: 'تم استرداد الكود بنجاح.',
         data: {
           code,
           materials: codesGroup.materials,

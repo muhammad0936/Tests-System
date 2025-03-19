@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 exports.copyQuestionsToFree = [
   body('numOfQuestions')
     .isInt({ min: 1 })
-    .withMessage('numOfQuestions must be a positive integer'),
+    .withMessage('يرجى إدخال عدد الأسئلة كرقم صحيح أكبر من صفر.'),
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
@@ -20,17 +20,17 @@ exports.copyQuestionsToFree = [
       const { numOfQuestions } = req.body;
       let totalCopied = 0;
 
-      // Clear existing free questions first
+      // حذف جميع الأسئلة المجانية الحالية
       await FreeQuestion.deleteMany({});
 
-      // Get all materials that have questions
+      // جلب جميع المواد التي تحتوي على أسئلة
       const materials = await Material.find({
         _id: { $in: await Question.distinct('material') },
       });
 
-      // Process each material
+      // معالجة كل مادة
       for (const material of materials) {
-        // Get random questions for current material
+        // اختيار أسئلة عشوائية من المادة الحالية
         const questions = await Question.aggregate([
           { $match: { material: material._id } },
           { $sample: { size: numOfQuestions } },
@@ -39,31 +39,20 @@ exports.copyQuestionsToFree = [
 
         if (questions.length === 0) continue;
 
-        // Add college reference through material
-        // CORRECTED VERSION (removes college reference)
-        // const freeQuestions = questions.map(question => ({
-        //   text: question.text,
-        //   isMultipleChoice: question.isMultipleChoice,
-        //   choices: question.choices,
-        //   information: question.information,
-        //   image: question.image,
-        //   material: question.material // Only keep material reference
-        // }));
-
-        // Insert into FreeQuestion collection
+        // إدخال الأسئلة في مجموعة الأسئلة المجانية
         const result = await FreeQuestion.insertMany(questions);
         totalCopied += result.length;
       }
 
       res.status(200).json({
-        message: `Successfully replaced all free questions with ${totalCopied} new questions`,
+        message: `تم استبدال جميع الأسئلة المجانية بنجاح وإضافة ${totalCopied} سؤال جديد.`,
         totalCopied,
         materialsProcessed: materials.length,
       });
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
 ];

@@ -4,9 +4,12 @@ const { body, param, validationResult } = require('express-validator');
 
 // Create a new teacher
 exports.createTeacher = [
-  body('fname').notEmpty().withMessage('First name is required'),
-  body('lname').optional().isString().withMessage('Last name must be string'),
-  body('phone').notEmpty().withMessage('Phone number is required'),
+  body('fname').notEmpty().withMessage('الاسم الأول مطلوب.'),
+  body('lname')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون اسم العائلة نصاً.'),
+  body('phone').notEmpty().withMessage('رقم الهاتف مطلوب.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -23,7 +26,7 @@ exports.createTeacher = [
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];
@@ -58,13 +61,13 @@ exports.getTeachers = async (req, res) => {
   } catch (err) {
     res
       .status(err.statusCode || 500)
-      .json({ error: err.message || 'Server error' });
+      .json({ error: err.message || 'حدث خطأ في الخادم.' });
   }
 };
 
 // Delete a teacher by ID
 exports.deleteTeacher = [
-  param('id').isMongoId().withMessage('Invalid Teacher ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال معرف المدرس بشكل صحيح.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -74,13 +77,15 @@ exports.deleteTeacher = [
     try {
       const teacher = await Teacher.findByIdAndDelete(req.params.id);
       if (!teacher) {
-        return res.status(404).json({ error: 'Teacher not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على المدرس.' });
       }
-      res.status(200).json({ message: 'Teacher deleted successfully' });
+      res.status(200).json({ message: 'تم حذف المدرس بنجاح.' });
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];

@@ -11,52 +11,54 @@ const validateSignup = [
   body('fname')
     .trim()
     .notEmpty()
-    .withMessage('First name is required')
+    .withMessage('الاسم الأول مطلوب.')
     .isLength({ max: 50 })
-    .withMessage('First name must be less than 50 characters'),
+    .withMessage('يجب أن يكون طول الاسم أقل من 50 حرفاً.'),
 
   body('lname')
     .optional()
     .trim()
     .isLength({ max: 50 })
-    .withMessage('Last name must be less than 50 characters'),
+    .withMessage('يجب أن يكون طول اسم العائلة أقل من 50 حرفاً.'),
 
   body('email')
     .trim()
-    .notEmpty()
-    .withMessage('Email is required')
+    .optional()
     .isEmail()
-    .withMessage('Invalid email format')
+    .withMessage('صيغة البريد الإلكتروني غير صحيحة.')
     .normalizeEmail(),
 
-  body('password').trim().notEmpty().withMessage('Password is required'),
-  body('phone').trim().notEmpty().withMessage('Phone number is required'),
+  body('password').trim().notEmpty().withMessage('كلمة المرور مطلوبة.'),
+  body('phone').trim().notEmpty().withMessage('رقم الهاتف مطلوب.'),
   body('university')
     .notEmpty()
-    .withMessage('University ID is required')
+    .withMessage('معرف الجامعة مطلوب.')
     .isMongoId()
-    .withMessage('Invalid University ID'),
+    .withMessage('معرف الجامعة غير صالح.'),
   body('college')
     .notEmpty()
-    .withMessage('College ID is required')
+    .withMessage('معرف الكلية مطلوب.')
     .isMongoId()
-    .withMessage('Invalid College ID'),
+    .withMessage('معرف الكلية غير صالح.'),
   body('year')
     .isInt({ min: 0, max: 6 })
-    .withMessage('Academic year must be between 0 and 6'),
+    .withMessage('يجب أن تكون السنة الأكاديمية بين 0 و 6.'),
 
-  body('image.url').optional().isURL().withMessage('Invalid image URL format'),
+  body('image.url')
+    .optional()
+    .isURL()
+    .withMessage('صيغة رابط الصورة غير صحيحة.'),
 
   body('image.publicId')
     .optional()
     .isString()
-    .withMessage('Invalid public ID format'),
+    .withMessage('صيغة المعرف العام غير صحيحة.'),
 ];
 
 // Student login validation middleware
 const validateLogin = [
-  body('phone').trim().notEmpty().withMessage('Phone number is required'),
-  body('password').trim().notEmpty().withMessage('Password is required'),
+  body('phone').trim().notEmpty().withMessage('رقم الهاتف مطلوب.'),
+  body('password').trim().notEmpty().withMessage('كلمة المرور مطلوبة.'),
 ];
 
 exports.signup = [
@@ -81,70 +83,69 @@ exports.signup = [
 
       // Validate required fields
       if (!fname || !lname || !year) {
-        const error = new Error(
-          'First name, last name, and year are required!'
-        );
+        const error = new Error('الاسم الأول واسم العائلة والسنة مطلوبة!');
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
       }
       const universityExists = await University.exists({ _id: university });
       if (!universityExists) {
-        return res.status(400).json({ message: 'University not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على الجامعة.' });
       }
       const loadedCollege = await College.findOne({ _id: college });
       if (!loadedCollege)
-        return res.status(400).json({ message: 'College not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على الكلية.' });
       if (loadedCollege.university.toString() !== university)
         return res.status(400).json({
-          message: 'Provided college is not from provided university!',
+          message: 'الكلية المقدمة لا تنتمي إلى الجامعة المقدمة!',
         });
       if (loadedCollege.numOfYears < year)
         return res.status(400).json({
-          message: `Chosen college has just ${loadedCollege.numOfYears} years, you choosed ${year}`,
+          message: `الكلية تحتوي فقط على ${loadedCollege.numOfYears} سنوات، وقد اخترت ${year}.`,
         });
       const emailExists = await Student.exists({ email });
       if (emailExists) {
-        const error = new Error('Email already exists!');
+        const error = new Error('البريد الإلكتروني موجود بالفعل!');
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
       }
 
       const existingStudent = await Student.findOne({ phone });
-      if (existingStudent?.email) {
-        const error = new Error('Phone already exists!');
+      if (existingStudent) {
+        const error = new Error('رقم الهاتف موجود بالفعل!');
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
       }
 
       const hashedPassword = await bcrypt.hash(password, 12);
-
-      if (existingStudent) {
-        // Update existing student with partial registration
-        existingStudent.fname = fname;
-        existingStudent.lname = lname;
-        existingStudent.email = email;
-        existingStudent.password = hashedPassword;
-        existingStudent.year = year;
-        existingStudent.image = image || existingStudent.image;
-        await existingStudent.save();
-      } else {
-        // Create new student
-        const student = new Student({
-          fname,
-          lname,
-          email,
-          phone,
-          password: hashedPassword,
-          year,
-          image: image || { url: '', publicId: '' },
-          university,
-          college,
-        });
-        await student.save();
-      }
-
+      // Create new student
+      const student = new Student({
+        fname,
+        lname,
+        email,
+        phone,
+        password: hashedPassword,
+        year,
+        image: image || { url: '', publicId: '' },
+        university,
+        college,
+      });
+      await student.save();
+      const token = jwt.sign(
+        {
+          userId: student._id,
+          phone: student.phone,
+          role: 'student',
+        },
+        'thisismysecretkey',
+        { expiresIn: '30d' }
+      );
       res.status(StatusCodes.CREATED).json({
-        message: 'Student registered successfully.',
+        message: 'تم تسجيل الطالب بنجاح.',
+        token: `Bearer ${token}`,
       });
     } catch (err) {
       if (!err.statusCode) err.statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
@@ -167,14 +168,14 @@ exports.login = [
         .lean();
 
       if (!loadedStudent) {
-        const error = new Error('Invalid credentials!');
+        const error = new Error('بيانات الاعتماد غير صالحة!');
         error.statusCode = StatusCodes.UNAUTHORIZED;
         throw error;
       }
 
       const isEqual = await bcrypt.compare(password, loadedStudent.password);
       if (!isEqual) {
-        const error = new Error('Invalid credentials!');
+        const error = new Error('بيانات الاعتماد غير صالحة!');
         error.statusCode = StatusCodes.UNAUTHORIZED;
         throw error;
       }
@@ -190,7 +191,7 @@ exports.login = [
       );
 
       res.status(StatusCodes.OK).json({
-        message: 'Login successful',
+        message: 'تم تسجيل الدخول بنجاح.',
         token: `Bearer ${token}`,
       });
     } catch (error) {

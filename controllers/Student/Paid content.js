@@ -11,16 +11,16 @@ exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
 
-    // Get student's accessible materials
     const student = await Student.findById(req.userId).select('redeemedCodes');
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
     }
 
     const now = new Date();
     const materialIds = new Set();
 
-    // Validate redeemed codes and collect materials
     for (const redemption of student.redeemedCodes) {
       const codesGroup = await CodesGroup.findOne({
         _id: redemption.codesGroup,
@@ -36,7 +36,6 @@ exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
       }
     }
 
-    // Early return if no materials
     const materialIdsArray = Array.from(materialIds).map(
       (id) => new mongoose.Types.ObjectId(id)
     );
@@ -50,7 +49,6 @@ exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
       });
     }
 
-    // Get colleges associated with materials
     const materials = await Material.find({ _id: { $in: materialIdsArray } })
       .select('college')
       .lean();
@@ -59,7 +57,6 @@ exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
       ...new Set(materials.map((m) => m.college.toString())),
     ].map((id) => new mongoose.Types.ObjectId(id));
 
-    // Get universities containing these colleges
     const colleges = await College.find({ _id: { $in: collegeIds } })
       .select('university')
       .lean();
@@ -68,7 +65,6 @@ exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
       ...new Set(colleges.map((c) => c.university.toString())),
     ].map((id) => new mongoose.Types.ObjectId(id));
 
-    // Paginate universities with filtered colleges
     const result = await University.paginate(
       { _id: { $in: universityIds } },
       {
@@ -86,7 +82,7 @@ exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(err.statusCode || 500).json({
-      error: err.message || 'Server error',
+      error: err.message || 'حدث خطأ في الخادم.',
     });
   }
 };
@@ -97,27 +93,27 @@ exports.getAccessibleCollegesByUniversity = async (req, res) => {
   try {
     const { page = 1, limit = 10, university } = req.query;
 
-    // Validate university ID format
     if (!mongoose.Types.ObjectId.isValid(university)) {
-      return res.status(400).json({ message: 'Invalid university ID format' });
+      return res.status(400).json({ message: 'صيغة معرف الجامعة غير صالحة.' });
     }
 
-    // Check university exists
     const universityExists = await University.exists({ _id: university });
     if (!universityExists) {
-      return res.status(404).json({ message: 'University not found' });
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الجامعة.' });
     }
 
-    // Get student with redeemed codes
     const student = await Student.findById(req.userId).select('redeemedCodes');
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
     }
 
     const now = new Date();
     const materialIds = new Set();
 
-    // Validate code redemptions and collect materials
     for (const redemption of student.redeemedCodes) {
       const codesGroup = await CodesGroup.findOne({
         _id: redemption.codesGroup,
@@ -131,7 +127,6 @@ exports.getAccessibleCollegesByUniversity = async (req, res) => {
       }
     }
 
-    // Early return if no accessible materials
     const materialIdsArray = Array.from(materialIds).map(
       (id) => new mongoose.Types.ObjectId(id)
     );
@@ -145,12 +140,10 @@ exports.getAccessibleCollegesByUniversity = async (req, res) => {
       });
     }
 
-    // Get colleges associated with materials
     const collegeIds = await Material.distinct('college', {
       _id: { $in: materialIdsArray },
     });
 
-    // Paginate colleges within specified university
     const colleges = await College.paginate(
       {
         university: university,
@@ -171,13 +164,12 @@ exports.getAccessibleCollegesByUniversity = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(err.statusCode || 500).json({
-      error: err.message || 'Server error',
+      error: err.message || 'حدث خطأ في الخادم.',
     });
   }
 };
 
 //[[[[[[[[[[[]]]]]]]]]]]
-
 exports.getAccessibleMaterials = async (req, res) => {
   try {
     const { page = 1, limit = 10, college } = req.query;
@@ -185,14 +177,16 @@ exports.getAccessibleMaterials = async (req, res) => {
     // Fetch student with redeemed codes
     const student = await Student.findById(req.userId).select('redeemedCodes');
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
     }
     if (!college) {
-      return res.status(400).json({ message: 'Please provide college ID!' });
+      return res.status(400).json({ message: 'يرجى تقديم معرف الكلية!' });
     }
     const loadedCollege = await College.findById(college);
     if (!loadedCollege) {
-      return res.status(400).json({ message: 'Invalid college ID!' });
+      return res.status(400).json({ message: 'معرف الكلية غير صالح.' });
     }
     const now = new Date();
     const materialIds = new Set();
@@ -234,7 +228,7 @@ exports.getAccessibleMaterials = async (req, res) => {
     console.log(err);
     res
       .status(err.statusCode || 500)
-      .json({ error: err.message || 'Server error' });
+      .json({ error: err.message || 'حدث خطأ في الخادم.' });
   }
 };
 
@@ -245,12 +239,10 @@ exports.getAccessibleQuestions = async (req, res) => {
 
     // Validate input parameters
     if (!material) {
-      return res
-        .status(400)
-        .json({ message: 'Material parameter is required' });
+      return res.status(400).json({ message: 'معرف المادة مطلوب.' });
     }
     if (!mongoose.Types.ObjectId.isValid(material)) {
-      return res.status(400).json({ message: 'Invalid material ID format' });
+      return res.status(400).json({ message: 'صيغة معرف المادة غير صالحة.' });
     }
 
     // Convert to ObjectId once
@@ -259,13 +251,17 @@ exports.getAccessibleQuestions = async (req, res) => {
     // Verify material exists
     const materialExists = await Material.exists({ _id: materialId });
     if (!materialExists) {
-      return res.status(404).json({ message: 'Material not found' });
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على المادة.' });
     }
 
     // Get student with redeemed codes
     const student = await Student.findById(studentId).select('redeemedCodes');
     if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
     }
 
     const now = new Date();
@@ -295,7 +291,7 @@ exports.getAccessibleQuestions = async (req, res) => {
 
     if (!hasAccess) {
       return res.status(403).json({
-        message: 'No valid access to this material',
+        message: 'ليس لديك وصول صالح لهذه المادة.',
       });
     }
 
@@ -325,7 +321,7 @@ exports.getAccessibleQuestions = async (req, res) => {
   } catch (err) {
     console.error('Error in getAccessibleQuestions:', err);
     res.status(err.statusCode || 500).json({
-      error: err.message || 'Server error',
+      error: err.message || 'حدث خطأ في الخادم.',
     });
   }
 };

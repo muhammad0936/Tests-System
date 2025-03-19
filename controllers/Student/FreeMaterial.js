@@ -10,22 +10,22 @@ exports.getFreeMaterials = async (req, res) => {
     const filter = {};
     const student = await Student.findById(req.userId);
     if (!student.college) {
-      return res
-        .status(400)
-        .json({ message: 'This student has no college ID!' });
+      return res.status(400).json({ message: 'هذا الطالب لا يملك معرف كلية!' });
     }
     const college = await College.findById(student.college);
     if (!college) {
       return res
         .status(400)
-        .json({ message: 'This student has invalid college ID!' });
+        .json({ message: 'هذا الطالب يملك معرف كلية غير صالح!' });
     }
     filter.college = college._id;
     if (!student.year)
-      return res.status(400).json({ message: 'This student has no year!' });
+      return res
+        .status(400)
+        .json({ message: 'هذا الطالب لا يملك سنة دراسية!' });
     if (student.year > college.numOfYears || student.year < 1)
       return res.status(400).json({
-        message: `This student has invalid year, it must be between 0 and ${college.numOfYears}.`,
+        message: `هذا الطالب لديه سنة دراسية غير صالحة، يجب أن تكون بين 0 و ${college.numOfYears}.`,
       });
     filter.year = Number(student.year);
     console.log(filter);
@@ -42,6 +42,6 @@ exports.getFreeMaterials = async (req, res) => {
   } catch (err) {
     res
       .status(err.statusCode || 500)
-      .json({ error: err.message || 'Server error' });
+      .json({ error: err.message || 'حدث خطأ في الخادم.' });
   }
 };

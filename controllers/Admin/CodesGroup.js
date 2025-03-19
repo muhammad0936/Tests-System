@@ -15,29 +15,29 @@ exports.createCodesGroup = [
   body('name')
     .trim()
     .notEmpty()
-    .withMessage('Group name is required')
+    .withMessage('يرجى إدخال اسم المجموعة.')
     .isLength({ max: 100 })
-    .withMessage('Name must be less than 100 characters'),
+    .withMessage('اسم المجموعة يجب أن يكون أقل من 100 حرف.'),
   body('materials')
     .optional()
     .isArray()
-    .withMessage('Materials must be an array')
+    .withMessage('المواد يجب أن تكون في شكل قائمة.')
     .custom((value) => value.every((id) => ObjectId.isValid(id)))
-    .withMessage('Invalid Material ID format'),
+    .withMessage('رقم تعريف المادة غير صحيح.'),
   body('courses')
     .optional()
     .isArray()
-    .withMessage('Courses must be an array')
+    .withMessage('الدورات يجب أن تكون في شكل قائمة.')
     .custom((value) => value.every((id) => ObjectId.isValid(id)))
-    .withMessage('Invalid Course ID format'),
+    .withMessage('رقم تعريف الدورة غير صحيح.'),
   body('codeCount')
     .isInt({ min: 1, max: 10000 })
-    .withMessage('Code count must be between 1 and 10000'),
+    .withMessage('عدد الأكواد يجب أن يكون بين 1 و 10000.'),
   body('expiration')
     .isISO8601()
-    .withMessage('Invalid expiration date format')
+    .withMessage('صيغة تاريخ الانتهاء غير صحيحة.')
     .custom((value) => new Date(value) > new Date())
-    .withMessage('Expiration must be in the future'),
+    .withMessage('يجب أن يكون تاريخ الانتهاء في المستقبل.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -61,9 +61,7 @@ exports.createCodesGroup = [
           _id: { $in: materials },
         });
         if (existingMaterials !== materials.length) {
-          return res
-            .status(404)
-            .json({ error: 'One or more materials not found' });
+          return res.status(404).json({ error: 'بعض المواد غير موجودة.' });
         }
       }
 
@@ -73,9 +71,7 @@ exports.createCodesGroup = [
           _id: { $in: courses },
         });
         if (existingCourses !== courses.length) {
-          return res
-            .status(404)
-            .json({ error: 'One or more courses not found' });
+          return res.status(404).json({ error: 'بعض الدورات غير موجودة.' });
         }
       }
 
@@ -96,7 +92,7 @@ exports.createCodesGroup = [
       await codesGroup.save();
 
       res.status(201).json({
-        message: 'Codes group created successfully',
+        message: 'تم إنشاء مجموعة الأكواد بنجاح.',
         data: {
           _id: codesGroup._id,
           name: codesGroup.name,
@@ -106,7 +102,7 @@ exports.createCodesGroup = [
       });
     } catch (err) {
       res.status(500).json({
-        error: err.message || 'Server error creating codes group',
+        error: err.message || 'حدث خطأ أثناء إنشاء مجموعة الأكواد.',
       });
     }
   },
@@ -193,7 +189,7 @@ exports.getCodesGroups = [
         courses: group.courses,
       }));
       res.status(200).json({
-        message: 'Codes groups retrieved successfully',
+        message: 'تم جلب مجموعات الأكواد بنجاح.',
         data: enhancedDocs,
         total: result.totalDocs,
         page: result.page,
@@ -201,18 +197,21 @@ exports.getCodesGroups = [
         limit: result.limit,
       });
     } catch (err) {
-      res.status(500).json({ error: 'Server error fetching codes groups' });
+      res.status(500).json({ error: 'حدث خطأ في جلب مجموعات الأكواد.' });
     }
   },
 ];
+
 exports.getCodesFromGroup = [
-  param('id').isMongoId().withMessage('Invalid CodesGroup ID'),
+  param('id')
+    .isMongoId()
+    .withMessage('يرجى إدخال رقم تعريف المجموعة بشكل صحيح.'),
   query('page').optional().isInt({ min: 1 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
   query('usage')
     .optional()
     .isIn(['all', 'used', 'unused'])
-    .withMessage('Invalid usage filter'),
+    .withMessage('يرجى اختيار فلتر الاستخدام بشكل صحيح.'),
 
   async (req, res) => {
     // await ensureIsAdmin(req.userId);
@@ -229,7 +228,9 @@ exports.getCodesFromGroup = [
         'name expiration codes'
       );
       if (!codesGroup) {
-        return res.status(404).json({ error: 'CodesGroup not found' });
+        return res
+          .status(404)
+          .json({ error: 'لم يتم العثور على مجموعة الأكواد المطلوبة.' });
       }
 
       // Apply usage filter
@@ -264,7 +265,7 @@ exports.getCodesFromGroup = [
       };
 
       return res.status(200).json({
-        message: 'Codes retrieved successfully',
+        message: 'تم جلب الأكواد بنجاح.',
         data: response,
         pagination: {
           page: Number(page),
@@ -275,7 +276,7 @@ exports.getCodesFromGroup = [
       });
     } catch (err) {
       return res.status(500).json({
-        error: err.message || 'Server error fetching codes',
+        error: err.message || 'حدث خطأ أثناء جلب الأكواد.',
       });
     }
   },
@@ -283,7 +284,9 @@ exports.getCodesFromGroup = [
 
 // Delete Codes Group
 exports.deleteCodesGroup = [
-  param('id').isMongoId().withMessage('Invalid Codes Group ID'),
+  param('id')
+    .isMongoId()
+    .withMessage('يرجى إدخال رقم تعريف المجموعة بشكل صحيح.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -296,14 +299,16 @@ exports.deleteCodesGroup = [
       const group = await CodesGroup.findById(req.params.id);
 
       if (!group) {
-        return res.status(404).json({ error: 'Codes group not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذرًا، لم يتم العثور على المجموعة المطلوبة.' });
       }
 
       // Check if any codes are used
       const hasUsedCodes = group.codes.some((c) => c.isUsed);
       if (hasUsedCodes) {
         return res.status(400).json({
-          error: 'Cannot delete group with used codes',
+          error: 'لا يمكن حذف المجموعة لأنها تحتوي على أكواد مستخدمة.',
         });
       }
 
@@ -322,7 +327,7 @@ exports.deleteCodesGroup = [
         );
 
         await session.commitTransaction();
-        res.status(200).json({ message: 'Codes group deleted successfully' });
+        res.status(200).json({ message: 'تم حذف المجموعة بنجاح.' });
       } catch (err) {
         await session.abortTransaction();
         throw err;
@@ -331,15 +336,18 @@ exports.deleteCodesGroup = [
       }
     } catch (err) {
       console.log(err);
-      res.status(500).json({ error: 'Server error deleting codes group' });
+      res.status(500).json({ error: 'حدث خطأ أثناء محاولة حذف المجموعة.' });
     }
   },
 ];
+
 // generate pdf
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 exports.exportCodeCardsPDF = [
-  param('id').isMongoId().withMessage('Invalid CodesGroup ID'),
+  param('id')
+    .isMongoId()
+    .withMessage('يرجى إدخال رقم تعريف المجموعة بشكل صحيح.'),
 
   async (req, res) => {
     // await ensureIsAdmin(req.userId);
@@ -359,12 +367,16 @@ exports.exportCodeCardsPDF = [
         .lean();
 
       if (!codesGroup) {
-        return res.status(404).json({ error: 'CodesGroup not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذرًا، لم يتم العثور على المجموعة المطلوبة.' });
       }
 
       const unusedCodes = codesGroup.codes.filter((c) => !c.isUsed);
       if (unusedCodes.length === 0) {
-        return res.status(400).json({ error: 'No unused codes available' });
+        return res
+          .status(400)
+          .json({ error: 'لا توجد أكواد غير مستخدمة متوفرة.' });
       }
 
       const doc = new PDFDocument({
@@ -391,12 +403,11 @@ exports.exportCodeCardsPDF = [
       };
 
       const createCodeCard = async (code) => {
-        // Calculate content height
         const lineHeights = {
-          header: 19.2, // 16pt * 1.2 line height
-          subheader: 14.4, // 12pt * 1.2
+          header: 19.2,
+          subheader: 14.4,
           qr: 200,
-          section: 16.8, // 14pt * 1.2
+          section: 16.8,
         };
 
         let totalHeight =
@@ -410,20 +421,20 @@ exports.exportCodeCardsPDF = [
         const startY = (842 - totalHeight) / 2;
         let currentY = startY;
 
-        // Header Section
         centeredText(codesGroup.name, currentY, 16);
         currentY += lineHeights.header;
 
         centeredText(
-          `Expires: ${new Date(codesGroup.expiration).toLocaleDateString()}`,
+          `تاريخ الانتهاء: ${new Date(
+            codesGroup.expiration
+          ).toLocaleDateString()}`,
           currentY
         );
         currentY += lineHeights.subheader;
 
-        centeredText(`Code: ${code.value}`, currentY);
+        centeredText(`الكود: ${code.value}`, currentY);
         currentY += lineHeights.subheader + 20;
 
-        // Centered QR Code
         const qrBuffer = await QRCode.toBuffer(code.value, {
           errorCorrectionLevel: 'H',
           width: 200,
@@ -433,25 +444,22 @@ exports.exportCodeCardsPDF = [
         doc.image(qrBuffer, qrX, currentY, { width: 200 });
         currentY += lineHeights.qr + 20;
 
-        // Materials
         if (hasMaterials) {
-          const materialsText = `Materials: ${codesGroup.materials
+          const materialsText = `المواد: ${codesGroup.materials
             .map((m) => m.name)
             .join(' - ')}`;
           centeredText(materialsText, currentY, 14);
           currentY += lineHeights.section + 20;
         }
 
-        // Courses
         if (hasCourses) {
-          const coursesText = `Courses: ${codesGroup.courses
+          const coursesText = `الدورات: ${codesGroup.courses
             .map((c) => c.name)
             .join(' - ')}`;
           centeredText(coursesText, currentY, 14);
         }
       };
 
-      // Generate pages
       for (const code of unusedCodes) {
         await createCodeCard(code);
         if (code !== unusedCodes[unusedCodes.length - 1]) {
@@ -461,9 +469,9 @@ exports.exportCodeCardsPDF = [
 
       doc.end();
     } catch (err) {
-      console.error('PDF Generation Error:', err);
+      console.error('خطأ في إنشاء ملف PDF:', err);
       res.status(500).json({
-        error: err.message || 'Failed to generate access cards',
+        error: err.message || 'حدث خطأ أثناء إنشاء بطاقات الأكواد.',
       });
     }
   },

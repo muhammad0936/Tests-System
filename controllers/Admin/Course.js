@@ -9,29 +9,29 @@ const Teacher = require('../../models/Teacher');
 
 // Create a new course
 exports.createCourse = [
-  body('name').notEmpty().withMessage('Course name is required'),
+  body('name').notEmpty().withMessage('يرجى إدخال اسم الدورة.'),
   body('description')
     .optional()
     .isString()
-    .withMessage('Course description must be string'),
-  body('material').isMongoId().withMessage('Invalid Material ID'),
-  body('teacher').isMongoId().withMessage('Invalid Teacher ID'),
+    .withMessage('وصف الدورة يجب أن يكون نصاً.'),
+  body('material').isMongoId().withMessage('معرف المادة غير صحيح.'),
+  body('teacher').isMongoId().withMessage('معرف المدرس غير صحيح.'),
   body('PromoVideo720.url')
     .optional()
     .isURL()
-    .withMessage('PromoVideo720 URL must be valid'),
+    .withMessage('رابط الفيديو الترويجي بجودة 720 يجب أن يكون صالحاً.'),
   body('PromoVideo720.publicId')
     .optional()
     .isString()
-    .withMessage('PromoVideo720 public ID must be a string'),
+    .withMessage('المعرف العام للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
   body('PromoVideo480.url')
     .optional()
     .isURL()
-    .withMessage('PromoVideo480 URL must be valid'),
+    .withMessage('رابط الفيديو الترويجي بجودة 480 يجب أن يكون صالحاً.'),
   body('PromoVideo480.publicId')
     .optional()
     .isString()
-    .withMessage('PromoVideo480 public ID must be a string'),
+    .withMessage('المعرف العام للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
@@ -41,10 +41,14 @@ exports.createCourse = [
       }
       const teacherExists = await Teacher.exists({ _id: req.body.teacher });
       if (!teacherExists)
-        return res.status(400).json({ message: 'Teacher not found' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على المدرس.' });
       const materialExists = await Material.exists({ _id: req.body.material });
       if (!materialExists)
-        return res.status(400).json({ message: 'Material not found' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على المادة.' });
       const course = new Course(req.body);
       await course.save();
       const {
@@ -70,7 +74,7 @@ exports.createCourse = [
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
 ];
@@ -80,7 +84,6 @@ exports.createCourse = [
 exports.getCourses = async (req, res) => {
   try {
     await ensureIsAdmin(req.userId);
-    // Destructure pagination and filter parameters from the query string
     const {
       page,
       limit,
@@ -94,56 +97,52 @@ exports.getCourses = async (req, res) => {
 
     const filter = {};
 
-    // Filter by course name (case-insensitive)
     if (name) {
       filter.name = { $regex: name, $options: 'i' };
     }
 
-    // Filter by course description (case-insensitive)
     if (description) {
       filter.description = { $regex: description, $options: 'i' };
     }
 
-    // Filter using material ID if provided
     if (material) {
       const materialExists = await Material.exists({ _id: material });
       if (!materialExists) {
-        return res.status(400).json({ message: 'Material not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على المادة.' });
       }
       filter.material = new mongoose.Types.ObjectId(material);
     }
 
-    // Filter using teacher ID if provided
     if (teacher) {
       const teacherExists = await Teacher.exists({ _id: teacher });
       if (!teacherExists) {
-        return res.status(400).json({ message: 'Teacher not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على المدرس.' });
       }
       filter.teacher = new mongoose.Types.ObjectId(teacher);
     }
 
-    /*
-      Apply college filter by retrieving all materials belonging to the given college.
-      If a material filter is already in place, ensure it belongs to the specified college.
-    */
     if (college) {
       const collegeExists = await College.exists({ _id: college });
       if (!collegeExists) {
-        return res.status(400).json({ message: 'College not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على الكلية.' });
       }
       const materialsByCollege = await Material.find({ college }).select('_id');
       if (!materialsByCollege.length) {
         return res
           .status(400)
-          .json({ message: 'No materials found for the provided college!' });
+          .json({ message: 'لا توجد مواد مرتبطة بالكلية المحددة.' });
       }
       const materialIds = materialsByCollege.map((m) => m._id);
       if (filter.material) {
-        // If a material filter was already provided, ensure its ID is within the list
         if (!materialIds.some((id) => id.equals(filter.material))) {
           return res.status(400).json({
-            message:
-              'The provided material does not belong to the specified college.',
+            message: 'المادة المحددة لا تنتمي إلى الكلية المطلوبة.',
           });
         }
       } else {
@@ -151,21 +150,18 @@ exports.getCourses = async (req, res) => {
       }
     }
 
-    /*
-      Apply university filter by first getting all colleges belonging to the university
-      and then getting all materials from those colleges.
-      If a material filter already exists, ensure it is within the allowed materials.
-    */
     if (university) {
       const universityExists = await University.exists({ _id: university });
       if (!universityExists) {
-        return res.status(400).json({ message: 'University not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على الجامعة.' });
       }
       const colleges = await College.find({ university }).select('_id');
       if (!colleges.length) {
         return res
           .status(400)
-          .json({ message: 'No colleges found for the specified university.' });
+          .json({ message: 'لا توجد كليات مرتبطة بالجامعة المحددة.' });
       }
       const collegeIds = colleges.map((c) => c._id);
       const materialsByUniversity = await Material.find({
@@ -173,29 +169,25 @@ exports.getCourses = async (req, res) => {
       }).select('_id');
       if (!materialsByUniversity.length) {
         return res.status(400).json({
-          message: 'No materials found for the specified university.',
+          message: 'لا توجد مواد مرتبطة بالجامعة المحددة.',
         });
       }
       const materialIds = materialsByUniversity.map((m) => m._id);
       if (filter.material) {
-        // If filter.material is defined as {$in: [...]}
         if (filter.material.$in) {
           const intersection = filter.material.$in.filter((id) =>
             materialIds.some((mId) => mId.equals(id))
           );
           if (!intersection.length) {
             return res.status(400).json({
-              message:
-                'No material found that meets the university filter criteria.',
+              message: 'لا توجد مادة تتطابق مع معايير التصفية.',
             });
           }
           filter.material.$in = intersection;
         } else {
-          // filter.material is a single ObjectId
           if (!materialIds.some((id) => id.equals(filter.material))) {
             return res.status(400).json({
-              message:
-                'The provided material does not belong to the specified university.',
+              message: 'المادة المحددة لا تنتمي إلى الجامعة المطلوبة.',
             });
           }
         }
@@ -203,10 +195,6 @@ exports.getCourses = async (req, res) => {
         filter.material = { $in: materialIds };
       }
     }
-
-    // Optional: If no filtering criteria on material, teacher, college, or university was provided,
-    // you might choose to return an error or all courses. Adjust this as needed.
-    // For this example, we allow listing courses with just a name/description filter.
 
     const courses = await Course.paginate(filter, {
       page: parseInt(page, 10) || 1,
@@ -222,13 +210,13 @@ exports.getCourses = async (req, res) => {
   } catch (err) {
     return res
       .status(err.statusCode || 500)
-      .json({ error: err.message || 'Server error' });
+      .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
   }
 };
 
 // Delete a course by ID
 exports.deleteCourse = [
-  param('id').isMongoId().withMessage('Invalid Course ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الدورة بشكل صحيح.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -238,13 +226,15 @@ exports.deleteCourse = [
     try {
       const course = await Course.findByIdAndDelete(req.params.id);
       if (!course) {
-        return res.status(404).json({ error: 'Course not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على الدورة.' });
       }
-      res.status(200).json({ message: 'Course deleted successfully' });
+      res.status(200).json({ message: 'تم حذف الدورة بنجاح.' });
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
 ];

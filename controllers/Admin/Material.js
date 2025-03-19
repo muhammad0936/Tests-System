@@ -5,23 +5,26 @@ const { body, param, validationResult } = require('express-validator');
 
 // Create a new material
 exports.createMaterial = [
-  body('name').notEmpty().withMessage('Material name is required'),
+  body('name').notEmpty().withMessage('اسم المادة مطلوب.'),
   body('year')
     .notEmpty()
-    .withMessage('Year is required')
+    .withMessage('السنة مطلوبة.')
     .isNumeric()
-    .withMessage('Year must be a number'),
-  body('color').optional().isString().withMessage('Color must be string'),
-  body('icon.url').optional().isURL().withMessage('Icon URL must be valid'),
+    .withMessage('يجب أن تكون السنة رقماً.'),
+  body('color').optional().isString().withMessage('يجب أن يكون اللون نصاً.'),
+  body('icon.url')
+    .optional()
+    .isURL()
+    .withMessage('يجب أن يكون رابط الأيقونة صالحاً.'),
   body('icon.publicId')
     .optional()
     .isString()
-    .withMessage('Icon public ID must be a string'),
+    .withMessage('يجب أن يكون المعرف العام للأيقونة نصاً.'),
   body('college')
     .notEmpty()
-    .withMessage('College ID is required')
+    .withMessage('معرف الكلية مطلوب.')
     .isMongoId()
-    .withMessage('Invalid College ID'),
+    .withMessage('معرف الكلية غير صالح.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -32,11 +35,13 @@ exports.createMaterial = [
       const { college } = req.body;
       const loadedCollege = await College.findById(college);
       if (!loadedCollege)
-        return res.status(400).json({ message: 'College not found!' });
+        return res
+          .status(400)
+          .json({ message: 'عذراً، لم يتم العثور على الكلية.' });
       console.log(loadedCollege, req.body.year);
       if (loadedCollege.numOfYears < req.body.year || req.body.year <= 0)
         return res.status(400).json({
-          message: `Provided college has ${loadedCollege.numOfYears} yaers, and provided year is ${req.body.year}`,
+          message: `الكلية تحتوي على ${loadedCollege.numOfYears} سنوات، والسنة المقدمة هي ${req.body.year}.`,
         });
       const material = new Material(req.body);
       await material.save();
@@ -47,7 +52,7 @@ exports.createMaterial = [
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];
@@ -59,11 +64,11 @@ exports.getMaterials = async (req, res) => {
     const { page, limit, college, year, name } = req.query;
     const filter = {};
     if (!college) {
-      req.status(400).json({ message: 'college is required!' });
+      req.status(400).json({ message: 'معرف الكلية مطلوب.' });
     }
     const collegeExists = await College.exists({ _id: college });
     if (!collegeExists) {
-      req.status(400).json({ message: 'college not found!' });
+      req.status(400).json({ message: 'عذراً، لم يتم العثور على الكلية.' });
     }
     filter.college = college;
     if (year) {
@@ -86,13 +91,13 @@ exports.getMaterials = async (req, res) => {
   } catch (err) {
     res
       .status(err.statusCode || 500)
-      .json({ error: err.message || 'Server error' });
+      .json({ error: err.message || 'حدث خطأ في الخادم.' });
   }
 };
 
 // Delete a material by ID
 exports.deleteMaterial = [
-  param('id').isMongoId().withMessage('Invalid Material ID'),
+  param('id').isMongoId().withMessage('يرجى إدخال معرف المادة بشكل صحيح.'),
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
@@ -102,13 +107,15 @@ exports.deleteMaterial = [
     try {
       const material = await Material.findByIdAndDelete(req.params.id);
       if (!material) {
-        return res.status(404).json({ error: 'Material not found' });
+        return res
+          .status(404)
+          .json({ error: 'عذراً، لم يتم العثور على المادة.' });
       }
-      res.status(200).json({ message: 'Material deleted successfully' });
+      res.status(200).json({ message: 'تم حذف المادة بنجاح.' });
     } catch (err) {
       res
         .status(err.statusCode || 500)
-        .json({ error: err.message || 'Server error' });
+        .json({ error: err.message || 'حدث خطأ في الخادم.' });
     }
   },
 ];

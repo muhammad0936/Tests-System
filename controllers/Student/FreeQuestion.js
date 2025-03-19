@@ -13,12 +13,12 @@ exports.getFreeQuestions = async (req, res) => {
     // Get student and validate college/year
     const student = await Student.findById(req.userId);
     if (!student.college) {
-      return res.status(400).json({ message: 'Student has no college ID!' });
+      return res.status(400).json({ message: 'الطالب ليس لديه معرف كلية!' });
     }
 
     const college = await College.findById(student.college);
     if (!college) {
-      return res.status(400).json({ message: 'Invalid college ID!' });
+      return res.status(400).json({ message: 'معرف الكلية غير صالح!' });
     }
 
     if (
@@ -27,7 +27,7 @@ exports.getFreeQuestions = async (req, res) => {
       student.year < 1
     ) {
       return res.status(400).json({
-        message: `Valid year between 1 and ${college.numOfYears} required`,
+        message: `يجب أن تكون السنة الدراسية صالحة بين 1 و ${college.numOfYears}.`,
       });
     }
 
@@ -40,7 +40,7 @@ exports.getFreeQuestions = async (req, res) => {
 
     if (!validMaterial) {
       return res.status(400).json({
-        message: 'Material not available in free resources',
+        message: 'المادة غير متوفرة في الموارد المجانية.',
       });
     }
 
@@ -65,7 +65,7 @@ exports.getFreeQuestions = async (req, res) => {
     });
   } catch (err) {
     res.status(err.statusCode || 500).json({
-      error: err.message || 'Server error',
+      error: err.message || 'حدث خطأ في الخادم.',
     });
   }
 };
