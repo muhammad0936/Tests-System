@@ -83,12 +83,10 @@ exports.login = [
         'thisismysecretkey',
         { expiresIn: '30d' }
       );
-      res
-        .status(200)
-        .json({
-          message: 'تم تسجيل الدخول بنجاح، سعداء بوجودك معنا!',
-          JWT: `Bearer ${token}`,
-        });
+      res.status(200).json({
+        message: 'تم تسجيل الدخول بنجاح',
+        token: `Bearer ${token}`,
+      });
     } catch (error) {
       if (!error.statusCode && !error[0]) error.statusCode = 500;
       next(error);

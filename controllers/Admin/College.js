@@ -59,7 +59,6 @@ exports.createCollege = [
 // Get all colleges
 exports.getColleges = async (req, res) => {
   try {
-    await ensureIsAdmin(req.userId);
     const { page, limit, university } = req.query;
 
     const filter = {};
@@ -93,7 +92,6 @@ exports.getCollegeById = [
   param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الكلية بشكل صحيح.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });

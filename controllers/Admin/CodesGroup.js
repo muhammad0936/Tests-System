@@ -91,6 +91,7 @@ exports.createCodesGroup = [
 
       await codesGroup.save();
 
+      // Updated response
       res.status(201).json({
         message: 'تم إنشاء مجموعة الأكواد بنجاح.',
         data: {
@@ -98,6 +99,7 @@ exports.createCodesGroup = [
           name: codesGroup.name,
           codeCount: codesGroup.codes.length,
           expiration: codesGroup.expiration,
+          codes: codesGroup.codes, // Add this line to include all created codes
         },
       });
     } catch (err) {

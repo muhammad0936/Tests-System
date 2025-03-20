@@ -38,7 +38,6 @@ exports.createUniversity = [
 // Get all universities
 exports.getUniversities = async (req, res) => {
   try {
-    await ensureIsAdmin(req.userId);
     const { page, limit } = req.query;
     const universities = await University.paginate(
       {},
@@ -55,7 +54,6 @@ exports.getUniversityById = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });

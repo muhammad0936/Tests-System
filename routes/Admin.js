@@ -23,11 +23,7 @@ const {
   getMaterials,
   deleteMaterial,
 } = require('../controllers/Admin/Material');
-const {
-  createQuestion,
-  getQuestions,
-  deleteQuestion,
-} = require('../controllers/Admin/Question');
+
 const {
   createTeacher,
   getTeachers,
@@ -52,27 +48,32 @@ const {
   exportCodeCardsPDF,
 } = require('../controllers/Admin/CodesGroup');
 const { copyQuestionsToFree } = require('../controllers/Admin/FreeQuestion');
+const {
+  createQuestions,
+  getQuestions,
+  deleteQuestion,
+} = require('../controllers/Admin/Question');
 
 router.post('/admin', multerGlobal, createAdmin);
 router.post('/login', multerGlobal, login);
 
 router.post('/university', multerGlobal, isAuth, createUniversity);
 router.put('/university/:id', multerGlobal, isAuth, updateUniversity);
-router.get('/universities', multerGlobal, isAuth, getUniversities);
-router.get('/university/:id', multerGlobal, isAuth, getUniversityById);
+router.get('/universities', multerGlobal, getUniversities);
+router.get('/university/:id', multerGlobal, getUniversityById);
 router.delete('/university/:id', multerGlobal, isAuth, deleteUniversity);
 
 router.post('/college', multerGlobal, isAuth, createCollege);
 router.put('/college/:id', multerGlobal, isAuth, updateCollege);
-router.get('/colleges', multerGlobal, isAuth, getColleges);
-router.get('/college/:id', multerGlobal, isAuth, getCollegeById);
+router.get('/colleges', multerGlobal, getColleges);
+router.get('/college/:id', multerGlobal, getCollegeById);
 router.delete('/college/:id', multerGlobal, isAuth, deleteCollege);
 
 router.post('/material', multerGlobal, isAuth, createMaterial);
 router.get('/materials', multerGlobal, isAuth, getMaterials);
 router.delete('/material/:id', multerGlobal, isAuth, deleteMaterial);
 
-router.post('/question', multerGlobal, isAuth, createQuestion);
+router.post('/questions', multerGlobal, isAuth, createQuestions);
 router.get('/questions', multerGlobal, isAuth, getQuestions);
 router.delete('/question/:id', multerGlobal, isAuth, deleteQuestion);
 

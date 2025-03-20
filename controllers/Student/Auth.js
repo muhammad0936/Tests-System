@@ -82,8 +82,8 @@ exports.signup = [
       } = req.body;
 
       // Validate required fields
-      if (!fname || !lname || !year) {
-        const error = new Error('الاسم الأول واسم العائلة والسنة مطلوبة!');
+      if (!fname || !year) {
+        const error = new Error('الاسم الأول والسنة مطلوبة!');
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
       }
@@ -106,18 +106,18 @@ exports.signup = [
         return res.status(400).json({
           message: `الكلية تحتوي فقط على ${loadedCollege.numOfYears} سنوات، وقد اخترت ${year}.`,
         });
-      const emailExists = await Student.exists({ email });
-      if (emailExists) {
-        const error = new Error('البريد الإلكتروني موجود بالفعل!');
-        error.statusCode = StatusCodes.BAD_REQUEST;
-        throw error;
+      if (email) {
+        const emailExists = await Student.exists({ email });
+        if (emailExists) {
+          return res
+            .status(400)
+            .json({ message: 'البريد الإلكتروني موجود بالفعل!' });
+        }
       }
 
       const existingStudent = await Student.findOne({ phone });
       if (existingStudent) {
-        const error = new Error('رقم الهاتف موجود بالفعل!');
-        error.statusCode = StatusCodes.BAD_REQUEST;
-        throw error;
+        return res.status(400).json({ message: 'رقم الهاتف موجود بالفعل!' });
       }
 
       const hashedPassword = await bcrypt.hash(password, 12);

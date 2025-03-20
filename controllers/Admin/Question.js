@@ -4,78 +4,148 @@ const { body, param, validationResult } = require('express-validator');
 const { shuffleArray } = require('../../util/shuffleArray');
 const Material = require('../../models/Material');
 const { default: mongoose } = require('mongoose');
+const { v4: uuidv4 } = require('uuid'); // if you need uuid in Questions as well
+// Assume Material and Question are your Mongoose models
+// Assume ensureIsAdmin is a middleware function that verifies admin privileges
 
-// Create a new question
-exports.createQuestion = [
-  body('text').notEmpty().withMessage('نص السؤال مطلوب.'),
-  body('isMultipleChoice')
+exports.createQuestions = [
+  // Validate that questions is a non-empty array.
+  body('questions')
+    .isArray({ min: 1 })
+    .withMessage('يجب إدخال مجموعة من الأسئلة.'),
+
+  // Custom validator to check each question’s internal logic.
+  body('questions').custom((questions) => {
+    questions.forEach((question, index) => {
+      // Validate that question text exists.
+      if (!question.text || question.text.trim() === '') {
+        throw new Error(`نص السؤال مطلوب للسؤال رقم ${index + 1}.`);
+      }
+      // If the question is multiple choice, ensure choices is a non-empty array.
+      if (question.isMultipleChoice) {
+        if (!Array.isArray(question.choices) || question.choices.length < 1) {
+          throw new Error(
+            `يجب إدخال خيار واحد على الأقل للأسئلة متعددة الاختيارات في السؤال رقم ${
+              index + 1
+            }.`
+          );
+        }
+        // Validate each choice.
+        question.choices.forEach((choice, choiceIndex) => {
+          if (!choice.text || choice.text.trim() === '') {
+            throw new Error(
+              `نص الاختيار مطلوب في السؤال رقم ${index + 1}, الاختيار رقم ${
+                choiceIndex + 1
+              }.`
+            );
+          }
+          if (
+            choice.isCorrect !== undefined &&
+            typeof choice.isCorrect !== 'boolean'
+          ) {
+            throw new Error(
+              `يجب أن يكون isCorrect قيمة منطقية في السؤال رقم ${
+                index + 1
+              }, الاختيار رقم ${choiceIndex + 1}.`
+            );
+          }
+        });
+      }
+      if (question.information && typeof question.information !== 'string') {
+        throw new Error(
+          `يجب أن تكون المعلومات نصاً في السؤال رقم ${index + 1}.`
+        );
+      }
+      if (question.image) {
+        if (question.image.url && typeof question.image.url !== 'string') {
+          throw new Error(
+            `يجب أن يكون رابط الصورة صالحاً في السؤال رقم ${index + 1}.`
+          );
+        }
+        if (
+          question.image.publicId &&
+          typeof question.image.publicId !== 'string'
+        ) {
+          throw new Error(
+            `يجب أن يكون معرف الصورة نصاً في السؤال رقم ${index + 1}.`
+          );
+        }
+      }
+      if (!question.material) {
+        throw new Error(`معرف المادة مطلوب في السؤال رقم ${index + 1}.`);
+      }
+      // Optionally, if you have a helper to validate ObjectId format, you could do that here.
+    });
+    return true;
+  }),
+
+  // Express-validator chain for each nested field
+  body('questions.*.text').notEmpty().withMessage('نص السؤال مطلوب.'),
+  body('questions.*.isMultipleChoice')
     .optional()
     .isBoolean()
     .withMessage('يجب أن يكون isMultipleChoice قيمة منطقية.'),
-  // If choices are provided for multiple choice questions, validate them.
-  body('choices')
-    .if((value, { req }) => req.body.isMultipleChoice)
-    .isArray({ min: 1 })
-    .withMessage('يجب إدخال خيار واحد على الأقل للأسئلة متعددة الاختيارات.'),
-  body('choices.*.text')
-    .if(body('choices').exists())
+  body('questions.*.choices')
+    .optional()
+    .isArray()
+    .withMessage('الخيارات يجب أن تكون في شكل قائمة.'),
+  body('questions.*.choices.*.text')
     .notEmpty()
     .withMessage('نص الاختيار مطلوب.'),
-  body('choices.*.isCorrect')
-    .if(body('choices').exists())
+  body('questions.*.choices.*.isCorrect')
     .optional()
     .isBoolean()
     .withMessage('يجب أن يكون isCorrect قيمة منطقية.'),
-  body('information')
+  body('questions.*.information')
     .optional()
     .isString()
     .withMessage('يجب أن تكون المعلومات نصاً.'),
-  body('image.url')
+  body('questions.*.image.url')
     .optional()
     .isURL()
     .withMessage('يجب أن يكون رابط الصورة صالحاً.'),
-  body('image.publicId')
+  body('questions.*.image.publicId')
     .optional()
     .isString()
     .withMessage('يجب أن يكون معرف الصورة نصاً.'),
-  body('material')
+  body('questions.*.material')
     .notEmpty()
     .withMessage('معرف المادة مطلوب.')
     .isMongoId()
     .withMessage('معرف المادة غير صالح.'),
+
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
+
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      const materialExists = await Material.exists({ _id: req.body.material });
-      if (!materialExists)
-        return res
-          .status(400)
-          .json({ message: 'عذراً، لم يتم العثور على المادة.' });
-      const question = new Question(req.body);
-      await question.save();
-      const {
-        _id,
-        text,
-        isMultipleChoice,
-        choices,
-        information,
-        image,
-        material,
-      } = question;
+
+      const questionsPayload = req.body.questions;
+      const createdQuestions = [];
+
+      // Process each question one by one.
+      for (let questionData of questionsPayload) {
+        // Verify the material for the question.
+        const materialExists = await Material.exists({
+          _id: questionData.material,
+        });
+        if (!materialExists) {
+          return res.status(400).json({
+            message: `عذراً، لم يتم العثور على المادة في السؤال: ${questionData.text}`,
+          });
+        }
+
+        const newQuestion = new Question(questionData);
+        await newQuestion.save();
+        createdQuestions.push(newQuestion);
+      }
+
       res.status(201).json({
-        question: {
-          _id,
-          text,
-          isMultipleChoice,
-          choices,
-          information,
-          image,
-          material,
-        },
+        message: 'تم إنشاء مجموعة الأسئلة بنجاح.',
+        questions: createdQuestions,
       });
     } catch (err) {
       res
