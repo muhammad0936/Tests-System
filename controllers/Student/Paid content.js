@@ -5,6 +5,8 @@ const Student = require('../../models/Student');
 const College = require('../../models/College');
 const University = require('../../models/University');
 const Question = require('../../models/Question');
+const Course = require('../../models/Course');
+const Video = require('../../models/Video');
 
 //[[[[[[[[[[[]]]]]]]]]]]
 exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
@@ -172,7 +174,7 @@ exports.getAccessibleCollegesByUniversity = async (req, res) => {
 //[[[[[[[[[[[]]]]]]]]]]]
 exports.getAccessibleMaterials = async (req, res) => {
   try {
-    const { page = 1, limit = 10, college } = req.query;
+    const { page = 1, limit = 10, college, year = 1 } = req.query;
 
     // Fetch student with redeemed codes
     const student = await Student.findById(req.userId).select('redeemedCodes');
@@ -188,6 +190,10 @@ exports.getAccessibleMaterials = async (req, res) => {
     if (!loadedCollege) {
       return res.status(400).json({ message: 'معرف الكلية غير صالح.' });
     }
+    if (!year || loadedCollege.numOfYears < year || year < 1)
+      return res.status(400).json({
+        message: `يرجى اختيار السنة الأكاديمية بين 1 و ${loadedCollege.numOfYears} `,
+      });
     const now = new Date();
     const materialIds = new Set();
 
@@ -214,7 +220,7 @@ exports.getAccessibleMaterials = async (req, res) => {
 
     // Paginate materials
     const materials = await Material.paginate(
-      { _id: { $in: materialIdsArray }, college },
+      { _id: { $in: materialIdsArray }, college, year },
       {
         page: parseInt(page, 10),
         limit: parseInt(limit, 10),
@@ -320,6 +326,185 @@ exports.getAccessibleQuestions = async (req, res) => {
     });
   } catch (err) {
     console.error('Error in getAccessibleQuestions:', err);
+    res.status(err.statusCode || 500).json({
+      error: err.message || 'حدث خطأ في الخادم.',
+    });
+  }
+};
+
+exports.getAccessibleCoursesByMaterial = async (req, res) => {
+  try {
+    const { limit = 10, page = 1, material } = req.query;
+    const studentId = req.userId;
+
+    // Validate input parameters
+    if (!material) {
+      return res.status(400).json({ message: 'معرف المادة مطلوب.' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(material)) {
+      return res.status(400).json({ message: 'صيغة معرف المادة غير صالحة.' });
+    }
+
+    // Convert to ObjectId once
+    const materialId = new mongoose.Types.ObjectId(material);
+
+    // Verify material exists
+    const materialExists = await Material.exists({ _id: materialId });
+    if (!materialExists) {
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على المادة.' });
+    }
+
+    // Get student with redeemed codes
+    const student = await Student.findById(studentId).select('redeemedCodes');
+    if (!student) {
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
+    }
+
+    const now = new Date();
+
+    // Get all codes groups that the student has access to for this material
+    const accessibleCodesGroups = await CodesGroup.find({
+      _id: { $in: student.redeemedCodes.map((rc) => rc.codesGroup) },
+      expiration: { $gt: now },
+      materials: materialId,
+      codes: {
+        $elemMatch: {
+          value: { $in: student.redeemedCodes.map((rc) => rc.code) },
+          isUsed: true,
+        },
+      },
+    })
+      .select('_id')
+      .populate('courses');
+    if (accessibleCodesGroups.length === 0) {
+      return res.status(403).json({
+        message: 'ليس لديك وصول صالح لهذه المادة.',
+      });
+    }
+
+    // Implement pagination
+    const pageSize = parseInt(limit, 10);
+    const currentPage = parseInt(page, 10);
+
+    // Get total number of accessible courses for pagination metadata
+    console.log(accessibleCodesGroups.flatMap((group) => group));
+    const totalCourses = await Course.countDocuments({
+      material: materialId,
+      _id: {
+        $in: accessibleCodesGroups.flatMap((group) => group.courses || []),
+      },
+    });
+
+    // Retrieve accessible courses with pagination
+    const courses = await Course.find({
+      material: materialId,
+      _id: {
+        $in: accessibleCodesGroups.flatMap((group) => group.courses || []),
+      },
+    })
+      .skip((currentPage - 1) * pageSize)
+      .limit(pageSize)
+      .select('-__v -createdAt -updatedAt') // Exclude unnecessary fields
+      .populate('material', 'name') // Populate material details
+      .populate('teacher', 'fname lname'); // Populate teacher details
+
+    res.status(200).json({
+      docs: courses,
+      totalDocs: totalCourses,
+      limit: pageSize,
+      page: currentPage,
+      totalPages: Math.ceil(totalCourses / pageSize),
+    });
+  } catch (err) {
+    console.error('Error in getAccessibleCoursesByMaterial:', err);
+    res.status(err.statusCode || 500).json({
+      error: err.message || 'حدث خطأ في الخادم.',
+    });
+  }
+};
+
+exports.getAccessibleVideosByCourse = async (req, res) => {
+  try {
+    const { limit = 10, page = 1, course } = req.query;
+    const studentId = req.userId;
+
+    // Validate input parameters
+    if (!course) {
+      return res.status(400).json({ message: 'معرف الدورة مطلوب.' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(course)) {
+      return res.status(400).json({ message: 'صيغة معرف الدورة غير صالحة.' });
+    }
+
+    // Convert to ObjectId once
+    const courseId = new mongoose.Types.ObjectId(course);
+
+    // Verify course exists
+    const courseExists = await Course.exists({ _id: courseId });
+    if (!courseExists) {
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الدورة.' });
+    }
+
+    // Get student with redeemed codes
+    const student = await Student.findById(studentId).select('redeemedCodes');
+    if (!student) {
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
+    }
+
+    const now = new Date();
+
+    // Get all codes groups that the student has access to for this course
+    const accessibleCodesGroups = await CodesGroup.find({
+      _id: { $in: student.redeemedCodes.map((rc) => rc.codesGroup) },
+      expiration: { $gt: now },
+      courses: courseId,
+      codes: {
+        $elemMatch: {
+          value: { $in: student.redeemedCodes.map((rc) => rc.code) },
+          isUsed: true,
+        },
+      },
+    }).select('_id');
+
+    if (accessibleCodesGroups.length === 0) {
+      return res.status(403).json({
+        message: 'ليس لديك وصول صالح لهذه الدورة.',
+      });
+    }
+
+    // Implement pagination
+    const pageSize = parseInt(limit, 10);
+    const currentPage = parseInt(page, 10);
+
+    // Get total number of accessible videos for pagination metadata
+    const totalVideos = await Video.countDocuments({
+      course: courseId,
+    });
+
+    // Retrieve accessible videos with pagination
+    const videos = await Video.find({ course: courseId })
+      .skip((currentPage - 1) * pageSize)
+      .limit(pageSize)
+      .select('-__v -createdAt -updatedAt') // Exclude unnecessary fields
+      .populate('course', 'name'); // Populate course details
+
+    res.status(200).json({
+      docs: videos,
+      totalDocs: totalVideos,
+      limit: pageSize,
+      page: currentPage,
+      totalPages: Math.ceil(totalVideos / pageSize),
+    });
+  } catch (err) {
+    console.error('Error in getAccessibleVideosByCourse:', err);
     res.status(err.statusCode || 500).json({
       error: err.message || 'حدث خطأ في الخادم.',
     });

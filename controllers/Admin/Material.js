@@ -64,11 +64,13 @@ exports.getMaterials = async (req, res) => {
     const { page, limit, college, year, name } = req.query;
     const filter = {};
     if (!college) {
-      req.status(400).json({ message: 'معرف الكلية مطلوب.' });
+      return res.status(400).json({ message: 'معرف الكلية مطلوب.' });
     }
     const collegeExists = await College.exists({ _id: college });
     if (!collegeExists) {
-      req.status(400).json({ message: 'عذراً، لم يتم العثور على الكلية.' });
+      return res
+        .status(400)
+        .json({ message: 'عذراً، لم يتم العثور على الكلية.' });
     }
     filter.college = college;
     if (year) {
