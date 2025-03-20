@@ -92,6 +92,7 @@ exports.getCourses = async (req, res) => {
       material,
       teacher,
       college,
+      year,
       university,
     } = req.query;
 
@@ -125,32 +126,38 @@ exports.getCourses = async (req, res) => {
       filter.teacher = new mongoose.Types.ObjectId(teacher);
     }
 
-    if (college) {
-      const collegeExists = await College.exists({ _id: college });
-      if (!collegeExists) {
+    if (college && !filter.material) {
+      const loadedCollege = await College.findById(college);
+      if (!loadedCollege) {
         return res
           .status(400)
           .json({ message: 'عذراً، لم يتم العثور على الكلية.' });
       }
-      const materialsByCollege = await Material.find({ college }).select('_id');
-      if (!materialsByCollege.length) {
-        return res
-          .status(400)
-          .json({ message: 'لا توجد مواد مرتبطة بالكلية المحددة.' });
-      }
-      const materialIds = materialsByCollege.map((m) => m._id);
-      if (filter.material) {
-        if (!materialIds.some((id) => id.equals(filter.material))) {
+      const query = { college };
+      if (year) {
+        if (year > loadedCollege.numOfYears || year < 1) {
           return res.status(400).json({
-            message: 'المادة المحددة لا تنتمي إلى الكلية المطلوبة.',
+            message: `الكلية تحتوي على ${loadedCollege.numOfYears} سنوات، والسنة المقدمة هي ${year}.`,
           });
         }
-      } else {
-        filter.material = { $in: materialIds };
+        query.year = year;
       }
+      const materialsByCollege = await Material.find(query).select('_id');
+      if (!materialsByCollege.length) {
+        if (!query.year)
+          return res
+            .status(400)
+            .json({ message: 'لا توجد مواد مرتبطة بالكلية المحددة.' });
+        else
+          return res
+            .status(400)
+            .json({ message: 'لا توجد مواد مرتبطة بالسنةالأكاديمية المحددة.' });
+      }
+      const materialIds = materialsByCollege.map((m) => m._id);
+      filter.material = { $in: materialIds };
     }
 
-    if (university) {
+    if (university && !filter.material) {
       const universityExists = await University.exists({ _id: university });
       if (!universityExists) {
         return res
@@ -173,27 +180,7 @@ exports.getCourses = async (req, res) => {
         });
       }
       const materialIds = materialsByUniversity.map((m) => m._id);
-      if (filter.material) {
-        if (filter.material.$in) {
-          const intersection = filter.material.$in.filter((id) =>
-            materialIds.some((mId) => mId.equals(id))
-          );
-          if (!intersection.length) {
-            return res.status(400).json({
-              message: 'لا توجد مادة تتطابق مع معايير التصفية.',
-            });
-          }
-          filter.material.$in = intersection;
-        } else {
-          if (!materialIds.some((id) => id.equals(filter.material))) {
-            return res.status(400).json({
-              message: 'المادة المحددة لا تنتمي إلى الجامعة المطلوبة.',
-            });
-          }
-        }
-      } else {
-        filter.material = { $in: materialIds };
-      }
+      filter.material = { $in: materialIds };
     }
 
     const courses = await Course.paginate(filter, {
