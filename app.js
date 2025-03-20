@@ -64,7 +64,8 @@ app.use((error, req, res, next) => {
   console.log('error : ');
   console.log(error);
   res.status(error?.statusCode || error[0]?.statusCode || 500).json({
-    result: error?.message || error?.map((i) => i?.msg) || 'an error occurred!',
+    message:
+      error?.message || error?.map((i) => i?.msg) || 'an error occurred!',
   });
 });
 

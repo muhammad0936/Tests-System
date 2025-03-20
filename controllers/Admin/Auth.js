@@ -25,10 +25,11 @@ exports.createAdmin = [
 
       const existingAdmin = await Admin.findOne({ phone });
       if (existingAdmin) {
-        const error = new Error('عذرًا، يبدو أن رقم الهاتف هذا مسجل بالفعل.');
-        error.statusCode = 400;
-        throw error;
+        return res
+          .status(400)
+          .json({ message: 'عذرًا، يبدو أن رقم الهاتف هذا مسجل بالفعل.' });
       }
+
       const hashedPassword = await bcrypt.hash(password, 12);
       const admin = new Admin({
         fname,
@@ -61,19 +62,21 @@ exports.login = [
       const loadedAdmin = await Admin.findOne({ phone });
 
       if (!loadedAdmin) {
-        const error = new Error(
-          'رقم الهاتف أو كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى.'
-        );
-        error.statusCode = 401;
-        throw error;
+        return res
+          .status(400)
+          .json({
+            message:
+              'رقم الهاتف أو كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى.',
+          });
       }
       const isEqual = await bcrypt.compare(password, loadedAdmin.password);
       if (!isEqual) {
-        const error = new Error(
-          'رقم الهاتف أو كلمة المرور غير صحيحة، يرجى التأكد والمحاولة مجددًا.'
-        );
-        error.statusCode = 401;
-        throw error;
+        return res
+          .status(400)
+          .json({
+            message:
+              'رقم الهاتف أو كلمة المرور غير صحيحة، يرجى التأكد والمحاولة مجددًا.',
+          });
       }
       const token = jwt.sign(
         {

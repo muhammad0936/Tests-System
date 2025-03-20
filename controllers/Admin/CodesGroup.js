@@ -40,13 +40,12 @@ exports.createCodesGroup = [
     .withMessage('يجب أن يكون تاريخ الانتهاء في المستقبل.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       const {
         name,
         materials = [],

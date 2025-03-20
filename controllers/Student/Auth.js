@@ -83,9 +83,7 @@ exports.signup = [
 
       // Validate required fields
       if (!fname || !year) {
-        const error = new Error('الاسم الأول والسنة مطلوبة!');
-        error.statusCode = StatusCodes.BAD_REQUEST;
-        throw error;
+        return res.status(400).json({ message: 'الاسم الأول والسنة مطلوبة!' });
       }
       const universityExists = await University.exists({ _id: university });
       if (!universityExists) {
@@ -168,16 +166,16 @@ exports.login = [
         .lean();
 
       if (!loadedStudent) {
-        const error = new Error('بيانات الاعتماد غير صالحة!');
-        error.statusCode = StatusCodes.UNAUTHORIZED;
-        throw error;
+        return res
+          .status(401)
+          .json({ message: 'بيانات تسجيل الدخول غير صالحة!' });
       }
 
       const isEqual = await bcrypt.compare(password, loadedStudent.password);
       if (!isEqual) {
-        const error = new Error('بيانات الاعتماد غير صالحة!');
-        error.statusCode = StatusCodes.UNAUTHORIZED;
-        throw error;
+        return res
+          .status(401)
+          .json({ message: 'بيانات تسجيل الدخول غير صالحة!' });
       }
 
       const token = jwt.sign(
