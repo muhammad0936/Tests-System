@@ -1,4 +1,4 @@
-const FreeQuestion = require('../../models/FreeQuestion');
+const FreeQuestion = require('../../models/FreeQuestionGroup');
 const { ensureIsAdmin } = require('../../util/ensureIsAdmin');
 const { body, param, validationResult } = require('express-validator');
 const { shuffleArray } = require('../../util/shuffleArray');

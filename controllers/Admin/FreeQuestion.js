@@ -1,14 +1,14 @@
-const FreeQuestion = require('../../models/FreeQuestion');
-const Question = require('../../models/Question');
+const FreeQuestionGroup = require('../../models/FreeQuestionGroup');
+const QuestionGroup = require('../../models/QuestionGroup');
 const Material = require('../../models/Material');
 const { ensureIsAdmin } = require('../../util/ensureIsAdmin');
 const { body, validationResult } = require('express-validator');
 const mongoose = require('mongoose');
 
 exports.copyQuestionsToFree = [
-  body('numOfQuestions')
+  body('numOfGroups')
     .isInt({ min: 1 })
-    .withMessage('يرجى إدخال عدد الأسئلة كرقم صحيح أكبر من صفر.'),
+    .withMessage('يرجى إدخال عدد المجموعات كرقم صحيح أكبر من صفر.'),
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
@@ -17,42 +17,64 @@ exports.copyQuestionsToFree = [
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { numOfQuestions } = req.body;
+      const { numOfGroups } = req.body;
       let totalCopied = 0;
 
-      // حذف جميع الأسئلة المجانية الحالية
-      await FreeQuestion.deleteMany({});
+      // حذف جميع المجموعات المجانية الحالية
+      await FreeQuestionGroup.deleteMany({});
 
-      // جلب جميع المواد التي تحتوي على أسئلة
+      // جلب جميع المواد التي تحتوي على مجموعات أسئلة
       const materials = await Material.find({
-        _id: { $in: await Question.distinct('material') },
+        _id: { $in: await QuestionGroup.distinct('material') },
       });
 
       // معالجة كل مادة
       for (const material of materials) {
-        // اختيار أسئلة عشوائية من المادة الحالية
-        const questions = await Question.aggregate([
+        // اختيار مجموعات عشوائية من المادة الحالية
+        const groups = await QuestionGroup.aggregate([
           { $match: { material: material._id } },
-          { $sample: { size: numOfQuestions } },
-          { $project: { __v: 0, createdAt: 0, updatedAt: 0 } },
+          { $sample: { size: numOfGroups } },
+          {
+            $project: {
+              __v: 0,
+              createdAt: 0,
+              updatedAt: 0,
+              'questions._id': 0,
+              'questions.createdAt': 0,
+              'questions.updatedAt': 0,
+            },
+          },
         ]);
 
-        if (questions.length === 0) continue;
+        if (groups.length === 0) continue;
 
-        // إدخال الأسئلة في مجموعة الأسئلة المجانية
-        const result = await FreeQuestion.insertMany(questions);
+        // إنشاء نسخة جديدة من المجموعات مع إزالة المعرفات
+        const groupsToInsert = groups.map((group) => ({
+          ...group,
+          questions: group.questions.map((question) => ({
+            ...question,
+            choices: question.choices.map((choice) => ({
+              ...choice,
+              _id: new mongoose.Types.ObjectId(),
+            })),
+          })),
+        }));
+
+        // إدخال المجموعات في المجموعات المجانية
+        const result = await FreeQuestionGroup.insertMany(groupsToInsert);
         totalCopied += result.length;
       }
 
       res.status(200).json({
-        message: `تم استبدال جميع الأسئلة المجانية بنجاح وإضافة ${totalCopied} سؤال جديد.`,
+        message: `تم استبدال جميع المجموعات المجانية بنجاح وإضافة ${totalCopied} مجموعة جديدة.`,
         totalCopied,
         materialsProcessed: materials.length,
       });
     } catch (err) {
-      res
-        .status(err.statusCode || 500)
-        .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
+      res.status(500).json({
+        error: err.message || 'حدث خطأ أثناء معالجة الطلب.',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+      });
     }
   },
 ];

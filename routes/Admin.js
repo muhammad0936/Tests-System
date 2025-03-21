@@ -49,9 +49,9 @@ const {
 } = require('../controllers/Admin/CodesGroup');
 const { copyQuestionsToFree } = require('../controllers/Admin/FreeQuestion');
 const {
-  createQuestions,
-  getQuestions,
-  deleteQuestion,
+  createQuestionGroup,
+  getQuestionGroups,
+  deleteQuestionGroup,
 } = require('../controllers/Admin/Question');
 
 router.post('/admin', multerGlobal, createAdmin);
@@ -73,9 +73,9 @@ router.post('/material', multerGlobal, isAuth, createMaterial);
 router.get('/materials', multerGlobal, isAuth, getMaterials);
 router.delete('/material/:id', multerGlobal, isAuth, deleteMaterial);
 
-router.post('/questions', multerGlobal, isAuth, createQuestions);
-router.get('/questions', multerGlobal, isAuth, getQuestions);
-router.delete('/question/:id', multerGlobal, isAuth, deleteQuestion);
+router.post('/questions', multerGlobal, isAuth, createQuestionGroup);
+router.get('/questions', multerGlobal, isAuth, getQuestionGroups);
+router.delete('/question/:id', multerGlobal, isAuth, deleteQuestionGroup);
 
 router.post('/teacher', multerGlobal, isAuth, createTeacher);
 router.get('/teachers', multerGlobal, isAuth, getTeachers);

@@ -4,7 +4,7 @@ const Material = require('../../models/Material');
 const Student = require('../../models/Student');
 const College = require('../../models/College');
 const University = require('../../models/University');
-const Question = require('../../models/Question');
+const Question = require('../../models/QuestionGroup');
 const Course = require('../../models/Course');
 const Video = require('../../models/Video');
 
@@ -297,7 +297,7 @@ exports.getAccessibleQuestions = async (req, res) => {
 
     if (!hasAccess) {
       return res.status(403).json({
-        message: 'ليس لديك وصول صالح لهذه المادة.',
+        message: 'ليس لديك صلاحية الوصول لهذه المادة.',
       });
     }
 
@@ -382,7 +382,7 @@ exports.getAccessibleCoursesByMaterial = async (req, res) => {
       .populate('courses');
     if (accessibleCodesGroups.length === 0) {
       return res.status(403).json({
-        message: 'ليس لديك وصول صالح لهذه المادة.',
+        message: 'ليس لديك صلاحية الوصول لهذه المادة.',
       });
     }
 
@@ -476,7 +476,7 @@ exports.getAccessibleVideosByCourse = async (req, res) => {
 
     if (accessibleCodesGroups.length === 0) {
       return res.status(403).json({
-        message: 'ليس لديك وصول صالح لهذه الدورة.',
+        message: 'ليس لديك صلاحية الوصول لهذه الدورة.',
       });
     }
 
