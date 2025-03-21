@@ -15,6 +15,10 @@ const {
   getAccessibleCoursesByMaterial,
   getAccessibleVideosByCourse,
 } = require('../controllers/Student/Paid content');
+const {
+  getFreeCourses,
+  getFreeVideos,
+} = require('../controllers/Student/FreeCourse');
 
 router.post('/signup', signup);
 router.post('/login', login);
@@ -23,6 +27,8 @@ router.post('/redeemCode', isAuth, redeemCode);
 
 router.get('/freeMaterials', isAuth, getFreeMaterials);
 router.get('/freeQuestions', isAuth, getFreeQuestions);
+router.get('/freeCourses', isAuth, getFreeCourses),
+  router.get('/freeVideos', isAuth, getFreeVideos);
 
 router.get('/universities', isAuth, getUniversitiesWithAccessibleMaterials);
 router.get('/colleges', isAuth, getAccessibleCollegesByUniversity);
@@ -30,4 +36,5 @@ router.get('/materials', isAuth, getAccessibleMaterials);
 router.get('/questions', isAuth, getAccessibleQuestions);
 router.get('/courses', isAuth, getAccessibleCoursesByMaterial);
 router.get('/videos', isAuth, getAccessibleVideosByCourse);
+
 module.exports = router;
