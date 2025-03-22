@@ -20,12 +20,12 @@ const courseSchema = new Schema(
       ref: 'Teacher',
     },
     promoVideo720: {
-      url: String,
-      publicId: String,
+      accessUrl: String,
+      videoId: String,
     },
     promoVideo480: {
-      url: String,
-      publicId: String,
+      accessUrl: String,
+      videoId: String,
     },
   },
   { timestamps: true }

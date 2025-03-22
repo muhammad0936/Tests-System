@@ -19,6 +19,7 @@ const {
   getFreeCourses,
   getFreeVideos,
 } = require('../controllers/Student/FreeCourse');
+const { getProfile, updateProfile } = require('../controllers/Student/Profile');
 
 router.post('/signup', signup);
 router.post('/login', login);
@@ -36,5 +37,8 @@ router.get('/materials', isAuth, getAccessibleMaterials);
 router.get('/questions', isAuth, getAccessibleQuestions);
 router.get('/courses', isAuth, getAccessibleCoursesByMaterial);
 router.get('/videos', isAuth, getAccessibleVideosByCourse);
+
+router.get('/profile', isAuth, getProfile);
+router.put('/profile', isAuth, updateProfile);
 
 module.exports = router;

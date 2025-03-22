@@ -53,7 +53,10 @@ const {
   getQuestionGroups,
   deleteQuestionGroup,
 } = require('../controllers/Admin/Question');
+const { uploadVideo } = require('../controllers/Admin/UploadVideo');
+const BunnyVideoUploader = require('../middlewares/BunnyVideoUpload');
 
+router.post('/uploadVideo', BunnyVideoUploader, uploadVideo);
 router.post('/admin', multerGlobal, createAdmin);
 router.post('/login', multerGlobal, login);
 

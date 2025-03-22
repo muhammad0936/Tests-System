@@ -9,12 +9,12 @@ const videoSchema = new Schema(
       required: true,
     },
     video720: {
-      url: String,
-      publicId: String,
+      accessUrl: String,
+      videoId: String,
     },
     video480: {
-      url: String,
-      publicId: String,
+      accessUrl: String,
+      videoId: String,
     },
     course: {
       type: Schema.Types.ObjectId,
