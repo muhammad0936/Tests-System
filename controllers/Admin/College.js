@@ -76,7 +76,6 @@ exports.getColleges = async (req, res) => {
       page: page || 1,
       limit: limit || 10,
       select: 'name icon university numOfYears',
-      populate: { path: 'university', select: 'name' }, // Populate university details
     });
 
     res.status(200).json(colleges);

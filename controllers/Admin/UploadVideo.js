@@ -49,15 +49,22 @@ exports.uploadVideo = async (req, res) => {
         'Content-Type': 'application/octet-stream',
       },
     });
-
+    const playDataUrl = `https://video.bunnycdn.com/library/${LIBRARY_ID}/videos/${videoId}/play?expires=0`;
+    const videoPlayData = await axios.get(playDataUrl, {
+      AccessKey: API_KEY,
+    });
+    const donwnloadUrl = videoPlayData?.data?.fallbackUrl;
     res.status(200).json({
       message: 'Video uploaded successfully!',
       video: {
         videoId,
+        libraryId: LIBRARY_ID,
         accessUrl: uploadUrl,
+        donwnloadUrl,
       },
     });
   } catch (error) {
+    console.error(error);
     console.error(
       'Error uploading video:',
       error.response?.data || error.message

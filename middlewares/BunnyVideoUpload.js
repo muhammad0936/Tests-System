@@ -14,6 +14,18 @@ const allowedMimeTypes = [
   'video/3gpp',
   'video/x-flv',
   'video/x-ms-wmv',
+  'audio/mp4',
+  'audio/x-m4v',
+  'audio/quicktime',
+  'audio/x-msvideo',
+  'audio/webm',
+  'audio/x-matroska',
+  'audio/mpeg',
+  'audio/x-mpeg',
+  'audio/ogg',
+  'audio/3gpp',
+  'audio/x-flv',
+  'audio/x-ms-wmv',
 ];
 
 // Configure multer with memory storage and file filter

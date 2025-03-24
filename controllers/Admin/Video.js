@@ -3,6 +3,7 @@ const Video = require('../../models/Video');
 const Course = require('../../models/Course');
 const { ensureIsAdmin } = require('../../util/ensureIsAdmin');
 const { body, param, validationResult } = require('express-validator');
+const { default: axios } = require('axios');
 
 // Create a new video
 exports.createVideo = [
@@ -111,6 +112,21 @@ exports.deleteVideo = [
         return res
           .status(404)
           .json({ error: 'عذراً، لم يتم العثور على الفيديو.' });
+      }
+      try {
+        deletionResponse = await axios.delete(video.video720.accessUrl, {
+          headers: {
+            Accept: 'application/json',
+            AccessKey: process.env.BUNNY_API_KEY,
+          },
+        });
+      } catch (deleteError) {
+        if (deleteError.response && deleteError.response.status === 404) {
+          console.log('Video not found, skipping deletion.');
+        } else {
+          // Re-throw other errors
+          throw deleteError;
+        }
       }
       res.status(200).json({ message: 'تم حذف الفيديو بنجاح.' });
     } catch (err) {

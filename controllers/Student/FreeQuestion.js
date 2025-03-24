@@ -53,15 +53,15 @@ exports.getFreeQuestions = async (req, res) => {
     ]);
 
     // Populate material name
-    const populatedQuestions = await FreeQuestion.populate(questions, {
-      path: 'material',
-      select: 'name',
-    });
+    // const populatedQuestions = await FreeQuestion.populate(questions, {
+    //   path: 'material',
+    //   select: 'name',
+    // });
 
     res.status(200).json({
-      docs: populatedQuestions,
+      docs: questions,
       limit: sampleSize,
-      total: populatedQuestions.length,
+      total: questions.length,
     });
   } catch (err) {
     res.status(err.statusCode || 500).json({

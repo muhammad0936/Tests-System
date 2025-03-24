@@ -16,6 +16,10 @@ const freeQuestionGroupSchema = new Schema(
     },
     questions: [
       {
+        isEnglish: {
+          type: Boolean,
+          default: false,
+        },
         text: {
           type: String,
           required: true,

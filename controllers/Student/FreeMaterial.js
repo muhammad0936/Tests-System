@@ -32,10 +32,6 @@ exports.getFreeMaterials = async (req, res) => {
     const materials = await Material.paginate(filter, {
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 10,
-      populate: {
-        path: 'college',
-        select: 'name',
-      },
       select: '-__v -createdAt -updatedAt',
     });
     res.status(200).json(materials);

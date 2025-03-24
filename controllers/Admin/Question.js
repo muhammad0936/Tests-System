@@ -68,6 +68,10 @@ exports.createQuestionGroup = [
     .optional()
     .isBoolean()
     .withMessage('يجب أن يكون isMultipleChoice قيمة منطقية.'),
+  body('questions.*.isEnglish')
+    .optional()
+    .isBoolean()
+    .withMessage('يجب أن يكون isEnglish قيمة منطقية.'),
   body('questions.*.choices')
     .isArray({ min: 2 })
     .withMessage('الخيارات يجب أن تكون قائمة تحتوي على خيارين على الأقل.'),
@@ -130,8 +134,7 @@ exports.getQuestionGroups = async (req, res) => {
     const [groups, totalGroups] = await Promise.all([
       QuestionGroup.find(filter)
         .skip((currentPage - 1) * pageSize)
-        .limit(pageSize)
-        .populate('material', 'name'),
+        .limit(pageSize),
       QuestionGroup.countDocuments(filter),
     ]);
 

@@ -11,10 +11,14 @@ const videoSchema = new Schema(
     video720: {
       accessUrl: String,
       videoId: String,
+      libraryId: String,
+      donwnloadUrl: String,
     },
     video480: {
       accessUrl: String,
       videoId: String,
+      libraryId: String,
+      donwnloadUrl: String,
     },
     course: {
       type: Schema.Types.ObjectId,

@@ -6,6 +6,7 @@ const Material = require('../../models/Material');
 const College = require('../../models/College');
 const University = require('../../models/University');
 const Teacher = require('../../models/Teacher');
+const { default: axios } = require('axios');
 
 // Create a new course
 exports.createCourse = [
@@ -143,16 +144,16 @@ exports.getCourses = async (req, res) => {
         query.year = year;
       }
       const materialsByCollege = await Material.find(query).select('_id');
-      if (!materialsByCollege.length) {
-        if (!query.year)
-          return res
-            .status(400)
-            .json({ message: 'لا توجد مواد مرتبطة بالكلية المحددة.' });
-        else
-          return res
-            .status(400)
-            .json({ message: 'لا توجد مواد مرتبطة بالسنةالأكاديمية المحددة.' });
-      }
+      // if (!materialsByCollege.length) {
+      //   if (!query.year)
+      //     return res
+      //       .status(400)
+      //       .json({ message: 'لا توجد مواد مرتبطة بالكلية المحددة.' });
+      //   else
+      //     return res
+      //       .status(400)
+      //       .json({ message: 'لا توجد مواد مرتبطة بالسنةالأكاديمية المحددة.' });
+      // }
       const materialIds = materialsByCollege.map((m) => m._id);
       filter.material = { $in: materialIds };
     }
@@ -186,10 +187,10 @@ exports.getCourses = async (req, res) => {
     const courses = await Course.paginate(filter, {
       page: parseInt(page, 10) || 1,
       limit: parseInt(limit, 10) || 10,
-      populate: [
-        { path: 'material', select: 'name' },
-        { path: 'teacher', select: 'fname lname phone' },
-      ],
+      // populate: [
+      //   { path: 'material', select: 'name' },
+      //   { path: 'teacher', select: 'fname lname phone' },
+      // ],
       select: 'name description material teacher promoVideo720 promoVideo480',
     });
 
@@ -217,8 +218,27 @@ exports.deleteCourse = [
           .status(404)
           .json({ error: 'عذراً، لم يتم العثور على الدورة.' });
       }
+      try {
+        deletionResponse = await axios.delete(course.promoVideo720.accessUrl, {
+          headers: {
+            Accept: 'application/json',
+            AccessKey: process.env.BUNNY_API_KEY,
+          },
+        });
+      } catch (deleteError) {
+        if (deleteError.response && deleteError.response.status === 404) {
+          console.log('Video not found, skipping deletion.');
+        } else {
+          // Re-throw other errors
+          throw deleteError;
+        }
+      }
+
+      // }
+      // console.log(deletionResponse?.data);
       res.status(200).json({ message: 'تم حذف الدورة بنجاح.' });
     } catch (err) {
+      // console.error(err);
       res
         .status(err.statusCode || 500)
         .json({ error: err.message || 'حدث خطأ أثناء معالجة الطلب.' });
