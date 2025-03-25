@@ -81,7 +81,7 @@ exports.getFreeCourses = [
 exports.getFreeVideos = [
   query('course')
     .isMongoId()
-    .withMessage('معرف الدورة يجب أن يكون معرفاً صالحاً'),
+    .withMessage('معرف الدورة يجب أن يكون معرفاً نصاً'),
   query('page')
     .optional()
     .isInt({ min: 1 })

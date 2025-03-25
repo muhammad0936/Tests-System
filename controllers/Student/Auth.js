@@ -44,15 +44,14 @@ const validateSignup = [
     .isInt({ min: 0, max: 6 })
     .withMessage('يجب أن تكون السنة الأكاديمية بين 0 و 6.'),
 
-  body('image.url')
-    .optional()
-    .isURL()
-    .withMessage('صيغة رابط الصورة غير صحيحة.'),
-
-  body('image.publicId')
+  body('image.filename')
     .optional()
     .isString()
-    .withMessage('صيغة المعرف العام غير صحيحة.'),
+    .withMessage('صيغة اسم الملف يجب أن تكون نصاً.'),
+  body('image.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('صيغة رابط الوصول غير صحيحة.'),
 ];
 
 // Student login validation middleware
@@ -127,7 +126,7 @@ exports.signup = [
         phone,
         password: hashedPassword,
         year,
-        image: image || { url: '', publicId: '' },
+        image: image || { filename: '', accessUrl: '' },
         university,
         college,
       });

@@ -55,8 +55,11 @@ const {
 } = require('../controllers/Admin/Question');
 const { uploadVideo } = require('../controllers/Admin/UploadVideo');
 const BunnyVideoUploader = require('../middlewares/BunnyVideoUpload');
+const { uploadImage } = require('../controllers/Admin/UploadImage');
+const BunnyImageUploader = require('../middlewares/BunnyImageUpload');
 
 router.post('/uploadVideo', BunnyVideoUploader, uploadVideo);
+router.post('/uploadImage', BunnyImageUploader, uploadImage);
 router.post('/admin', multerGlobal, createAdmin);
 router.post('/login', multerGlobal, login);
 

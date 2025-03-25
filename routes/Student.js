@@ -20,6 +20,12 @@ const {
   getFreeVideos,
 } = require('../controllers/Student/FreeCourse');
 const { getProfile, updateProfile } = require('../controllers/Student/Profile');
+const { getResolutions } = require('../controllers/Student/Files');
+const {
+  addFavoriteQuestionGroup,
+  getFavoriteQuestionGroups,
+  removeFavoriteQuestionGroup,
+} = require('../controllers/Student/Favorite');
 
 router.post('/signup', signup);
 router.post('/login', login);
@@ -37,8 +43,13 @@ router.get('/materials', isAuth, getAccessibleMaterials);
 router.get('/questions', isAuth, getAccessibleQuestions);
 router.get('/courses', isAuth, getAccessibleCoursesByMaterial);
 router.get('/videos', isAuth, getAccessibleVideosByCourse);
+router.get('/resolutions', getResolutions);
 
 router.get('/profile', isAuth, getProfile);
 router.put('/profile', isAuth, updateProfile);
+
+router.post('/favorites', isAuth, addFavoriteQuestionGroup);
+router.delete('/favorites', isAuth, removeFavoriteQuestionGroup);
+router.get('/favorites', isAuth, getFavoriteQuestionGroups);
 
 module.exports = router;

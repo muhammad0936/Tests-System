@@ -17,22 +17,40 @@ exports.createCourse = [
     .withMessage('وصف الدورة يجب أن يكون نصاً.'),
   body('material').isMongoId().withMessage('معرف المادة غير صحيح.'),
   body('teacher').isMongoId().withMessage('معرف المدرس غير صحيح.'),
-  body('PromoVideo720.url')
-    .optional()
-    .isURL()
-    .withMessage('رابط الفيديو الترويجي بجودة 720 يجب أن يكون صالحاً.'),
-  body('PromoVideo720.publicId')
+  body('PromoVideo720.accessUrl')
     .optional()
     .isString()
-    .withMessage('المعرف العام للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
-  body('PromoVideo480.url')
-    .optional()
-    .isURL()
-    .withMessage('رابط الفيديو الترويجي بجودة 480 يجب أن يكون صالحاً.'),
-  body('PromoVideo480.publicId')
+    .withMessage('رابط الوصول للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
+  body('PromoVideo720.videoId')
     .optional()
     .isString()
-    .withMessage('المعرف العام للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
+    .withMessage('معرف الفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
+  body('PromoVideo720.libraryId')
+    .optional()
+    .isString()
+    .withMessage('معرف المكتبة للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
+  body('PromoVideo720.downloadUrl')
+    .optional()
+    .isString()
+    .withMessage('رابط التنزيل للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
+
+  body('PromoVideo480.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('رابط الوصول للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
+  body('PromoVideo480.videoId')
+    .optional()
+    .isString()
+    .withMessage('معرف الفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
+  body('PromoVideo480.libraryId')
+    .optional()
+    .isString()
+    .withMessage('معرف المكتبة للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
+  body('PromoVideo480.downloadUrl')
+    .optional()
+    .isString()
+    .withMessage('رابط التنزيل للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
+
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);

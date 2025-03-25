@@ -9,7 +9,9 @@ const University = require('../../models/University');
 exports.getProfile = async (req, res, next) => {
   try {
     const student = await Student.findById(req.userId)
-      .select('-password -resetToken -resetTokenExpiration -redeemedCodes')
+      .select(
+        '-password -resetToken -resetTokenExpiration -redeemedCodes -favorites -__v -updatedAt'
+      )
       .populate('university', 'name')
       .populate('college', 'name numOfYears')
       .lean();
@@ -68,15 +70,14 @@ const validateUpdateProfile = [
     .isInt({ min: 0, max: 6 })
     .withMessage('يجب أن تكون السنة الأكاديمية بين 0 و 6.'),
 
-  body('image.url')
-    .optional()
-    .isURL()
-    .withMessage('صيغة رابط الصورة غير صحيحة.'),
-
-  body('image.publicId')
+  body('image.filename')
     .optional()
     .isString()
-    .withMessage('صيغة المعرف العام غير صحيحة.'),
+    .withMessage('صيغة اسم الملف يجب أن تكون نصاً.'),
+  body('image.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('صيغة رابط الوصول غير صحيحة.'),
 
   body('password')
     .optional()
@@ -170,7 +171,9 @@ exports.updateProfile = [
 
       // Get updated profile without sensitive data
       const updatedProfile = await Student.findById(req.userId)
-        .select('-password -resetToken -resetTokenExpiration -redeemedCodes')
+        .select(
+          '-password -resetToken -resetTokenExpiration -redeemedCodes -favorites -__v -updatedAt'
+        )
         .populate('university', 'name')
         .populate('college', 'name numOfYears')
         .lean();

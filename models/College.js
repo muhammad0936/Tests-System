@@ -9,8 +9,8 @@ const collegeSchema = new Schema(
       required: true,
     },
     icon: {
-      url: String,
-      publicId: String,
+      filename: String,
+      accessUrl: String,
     },
     university: {
       type: Schema.Types.ObjectId,

@@ -5,14 +5,14 @@ const { body, param, validationResult } = require('express-validator');
 // Create a new university
 exports.createUniversity = [
   // Validate only complex fields
-  body('icon.url')
-    .optional()
-    .isURL()
-    .withMessage('يجب أن يكون رابط الأيقونة صالحاً.'),
-  body('icon.publicId')
+  body('icon.filename')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون المعرف العام للأيقونة نصاً.'),
+    .withMessage('يجب أن يكون اسم الملف نصاً.'),
+  body('icon.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون رابط الوصول نصاً.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);
@@ -78,14 +78,14 @@ exports.getUniversityById = [
 // Update a university by ID
 exports.updateUniversity = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
-  body('icon.url')
-    .optional()
-    .isURL()
-    .withMessage('يجب أن يكون رابط الأيقونة صالحاً.'),
-  body('icon.publicId')
+  body('icon.filename')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون المعرف العام للأيقونة نصاً.'),
+    .withMessage('يجب أن يكون اسم الملف نصاً.'),
+  body('icon.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون رابط الوصول نصاً.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);

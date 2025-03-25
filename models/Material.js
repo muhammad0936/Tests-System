@@ -16,8 +16,8 @@ const materialSchema = new Schema(
       type: String,
     },
     icon: {
-      url: String,
-      publicId: String,
+      filename: String,
+      accessUrl: String,
     },
     college: {
       type: Schema.Types.ObjectId,

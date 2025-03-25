@@ -6,8 +6,8 @@ const freeQuestionGroupSchema = new Schema(
   {
     paragraph: String,
     image: {
-      url: String,
-      publicId: String,
+      filename: String,
+      accessUrl: String,
     },
     material: {
       type: Schema.Types.ObjectId,

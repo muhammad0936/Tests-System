@@ -9,22 +9,40 @@ const { default: axios } = require('axios');
 exports.createVideo = [
   body('name').notEmpty().withMessage('اسم الفيديو مطلوب.'),
   body('course').isMongoId().withMessage('معرف الدورة غير صالح.'),
-  body('video720.url')
+  body('video720.accessUrl')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون رابط فيديو 720 نصاً.'),
-  body('video720.publicId')
+    .withMessage('يجب أن يكون رابط الوصول لفيديو 720 نصاً.'),
+  body('video720.videoId')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون المعرف العام لفيديو 720 نصاً.'),
-  body('video480.url')
+    .withMessage('يجب أن يكون معرف الفيديو لفيديو 720 نصاً.'),
+  body('video720.libraryId')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون رابط فيديو 480 نصاً.'),
-  body('video480.publicId')
+    .withMessage('يجب أن يكون معرف المكتبة لفيديو 720 نصاً.'),
+  body('video720.downloadUrl')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون المعرف العام لفيديو 480 نصاً.'),
+    .withMessage('يجب أن يكون رابط التنزيل لفيديو 720 نصاً.'),
+
+  body('video480.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون رابط الوصول لفيديو 480 نصاً.'),
+  body('video480.videoId')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون معرف الفيديو لفيديو 480 نصاً.'),
+  body('video480.libraryId')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون معرف المكتبة لفيديو 480 نصاً.'),
+  body('video480.downloadUrl')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون رابط التنزيل لفيديو 480 نصاً.'),
+
   async (req, res) => {
     await ensureIsAdmin(req.userId);
     const errors = validationResult(req);

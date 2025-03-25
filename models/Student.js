@@ -10,8 +10,8 @@ const studentSchema = new Schema(
     password: { type: String, required: true },
     phone: { type: String, unique: true, required: true },
     image: {
-      url: String,
-      publicId: String,
+      filename: String,
+      accessUrl: String,
     },
     university: {
       type: Schema.Types.ObjectId,
@@ -43,8 +43,11 @@ const studentSchema = new Schema(
     ],
     favorites: [
       {
-        type: Schema.Types.ObjectId,
-        ref: 'Question',
+        questionGroup: {
+          type: Schema.Types.ObjectId,
+          ref: 'QuestionGroup',
+        },
+        index: Number,
       },
     ],
     resetToken: String,

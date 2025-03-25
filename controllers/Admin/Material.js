@@ -12,14 +12,15 @@ exports.createMaterial = [
     .isNumeric()
     .withMessage('يجب أن تكون السنة رقماً.'),
   body('color').optional().isString().withMessage('يجب أن يكون اللون نصاً.'),
-  body('icon.url')
-    .optional()
-    .isURL()
-    .withMessage('يجب أن يكون رابط الأيقونة صالحاً.'),
-  body('icon.publicId')
+  body('icon.filename')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون المعرف العام للأيقونة نصاً.'),
+    .withMessage('يجب أن يكون اسم الملف نصاً.'),
+  body('icon.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون رابط الوصول نصاً.'),
+
   body('college')
     .notEmpty()
     .withMessage('معرف الكلية مطلوب.')

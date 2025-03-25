@@ -16,14 +16,14 @@ exports.createCollege = [
     .withMessage('عدد السنوات مطلوب.')
     .isNumeric()
     .withMessage('يجب إدخال عدد السنوات كرقم.'),
-  body('icon.url')
-    .optional()
-    .isURL()
-    .withMessage('رابط الأيقونة يجب أن يكون صالحاً.'),
-  body('icon.publicId')
+  body('icon.filename')
     .optional()
     .isString()
-    .withMessage('معرف الأيقونة يجب أن يكون نصاً.'),
+    .withMessage('اسم الملف يجب أن يكون نصاً.'),
+  body('icon.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('رابط الوصول يجب أن يكون نصاً.'),
 
   async (req, res) => {
     try {
@@ -124,14 +124,14 @@ exports.updateCollege = [
     .optional()
     .isNumeric()
     .withMessage('يجب إدخال عدد السنوات كرقم.'),
-  body('icon.url')
-    .optional()
-    .isURL()
-    .withMessage('رابط الأيقونة يجب أن يكون صالحاً.'),
-  body('icon.publicId')
+  body('icon.filename')
     .optional()
     .isString()
-    .withMessage('معرف الأيقونة يجب أن يكون نصاً.'),
+    .withMessage('اسم الملف يجب أن يكون نصاً.'),
+  body('icon.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('رابط الوصول يجب أن يكون نصاً.'),
 
   async (req, res) => {
     await ensureIsAdmin(req.userId);

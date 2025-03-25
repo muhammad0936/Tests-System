@@ -10,15 +10,14 @@ exports.createQuestionGroup = [
     .isString()
     .withMessage('يجب أن تكون الفقرة نصية.'),
 
-  body('image.url')
-    .optional()
-    .isURL()
-    .withMessage('يجب أن يكون رابط الصورة صالحاً.'),
-
-  body('image.publicId')
+  body('image.filename')
     .optional()
     .isString()
-    .withMessage('يجب أن يكون معرف الصورة نصياً.'),
+    .withMessage('يجب أن يكون اسم الملف نصاً.'),
+  body('image.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون رابط الوصول نصاً.'),
 
   body('material').notEmpty().isMongoId().withMessage('معرف المادة غير صالح.'),
 
@@ -96,7 +95,6 @@ exports.createQuestionGroup = [
       }
 
       const groupData = req.body;
-
       // Verify material exists
       const materialExists = await Material.exists({ _id: groupData.material });
       if (!materialExists) {

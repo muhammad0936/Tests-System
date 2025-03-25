@@ -10,8 +10,8 @@ const universitySchema = new Schema(
       unique: true,
     },
     icon: {
-      url: String,
-      publicId: String,
+      filename: String,
+      accessUrl: String,
     },
   },
   { timestamps: true }
