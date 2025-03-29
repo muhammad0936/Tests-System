@@ -57,7 +57,13 @@ const { uploadVideo } = require('../controllers/Admin/UploadVideo');
 const BunnyVideoUploader = require('../middlewares/BunnyVideoUpload');
 const { uploadImage } = require('../controllers/Admin/UploadImage');
 const BunnyImageUploader = require('../middlewares/BunnyImageUpload');
+const { getTeachersStatistics } = require('../controllers/Admin/Statistics');
+const { getBaccalaureate } = require('../controllers/Admin/GetBaccalaureate');
+const {
+  sendNotificationToAllStudents,
+} = require('../controllers/Admin/Notification');
 
+router.get('/baccalaureate', getBaccalaureate);
 router.post('/uploadVideo', BunnyVideoUploader, uploadVideo);
 router.post('/uploadImage', BunnyImageUploader, uploadImage);
 router.post('/admin', multerGlobal, createAdmin);
@@ -102,5 +108,8 @@ router.delete('/codesGroup/:id', multerGlobal, isAuth, deleteCodesGroup);
 router.get('/codesGroup/:id/export-pdf', multerGlobal, exportCodeCardsPDF);
 
 router.post('/changeFreeQuestions', multerGlobal, isAuth, copyQuestionsToFree);
+router.get('/teachersStatistics', multerGlobal, isAuth, getTeachersStatistics);
+
+router.post('/sendNotification', isAuth, sendNotificationToAllStudents);
 
 module.exports = router;

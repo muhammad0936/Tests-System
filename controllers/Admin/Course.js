@@ -224,12 +224,12 @@ exports.getCourses = async (req, res) => {
 exports.deleteCourse = [
   param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الدورة بشكل صحيح.'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       const course = await Course.findByIdAndDelete(req.params.id);
       if (!course) {
         return res

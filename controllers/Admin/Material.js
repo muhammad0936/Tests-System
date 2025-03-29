@@ -27,12 +27,12 @@ exports.createMaterial = [
     .isMongoId()
     .withMessage('معرف الكلية غير صالح.'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       const { college } = req.body;
       const loadedCollege = await College.findById(college);
       if (!loadedCollege)
@@ -102,12 +102,12 @@ exports.getMaterials = async (req, res) => {
 exports.deleteMaterial = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف المادة بشكل صحيح.'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       const material = await Material.findByIdAndDelete(req.params.id);
       if (!material) {
         return res

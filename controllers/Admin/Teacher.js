@@ -11,12 +11,12 @@ exports.createTeacher = [
     .withMessage('يجب أن يكون اسم العائلة نصاً.'),
   body('phone').notEmpty().withMessage('رقم الهاتف مطلوب.'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       const teacher = new Teacher(req.body);
       await teacher.save();
       const { _id, fname, lname, phone } = teacher;
@@ -69,12 +69,12 @@ exports.getTeachers = async (req, res) => {
 exports.deleteTeacher = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف المدرس بشكل صحيح.'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       const teacher = await Teacher.findByIdAndDelete(req.params.id);
       if (!teacher) {
         return res

@@ -50,7 +50,6 @@ const studentSchema = new Schema(
         index: Number,
       },
     ],
-    fcmToken: String,
     resetToken: String,
     resetTokenExpiration: Date,
   },

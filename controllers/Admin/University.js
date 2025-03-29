@@ -15,13 +15,13 @@ exports.createUniversity = [
     .withMessage('يجب أن يكون رابط الوصول نصاً.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const university = new University(req.body);
       await university.save();
       const { _id, name, icon = '' } = university;
@@ -88,13 +88,15 @@ exports.updateUniversity = [
     .withMessage('يجب أن يكون رابط الوصول نصاً.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const baccUniversity = await University.findOne({ name: 'بكالوريا' });
+      if (baccUniversity._id.toString() === req.params.id) delete req.body.name;
       const university = await University.findByIdAndUpdate(
         req.params.id,
         req.body,
@@ -118,13 +120,13 @@ exports.deleteUniversity = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const university = await University.findByIdAndDelete(req.params.id);
       if (!university) {
         return res

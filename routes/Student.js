@@ -3,7 +3,12 @@ const router = express.Router();
 const isAuth = require('../middlewares/isAuth');
 const multerMiddleware = require('../middlewares/multerWithFiles');
 const multerGlobal = require('../middlewares/multerGlobal');
-const { signup, login } = require('../controllers/Student/Auth');
+const {
+  signup,
+  login,
+  deleteAccount,
+  sendOtp,
+} = require('../controllers/Student/Auth');
 const { redeemCode } = require('../controllers/Student/Code');
 const { getFreeMaterials } = require('../controllers/Student/FreeMaterial');
 const { getFreeQuestions } = require('../controllers/Student/FreeQuestion');
@@ -26,9 +31,12 @@ const {
   getFavoriteQuestionGroups,
   removeFavoriteQuestionGroup,
 } = require('../controllers/Student/Favorite');
-
+const { updateFcmToken } = require('../controllers/Student/FcmToken');
+router.post('/otp', sendOtp);
 router.post('/signup', signup);
 router.post('/login', login);
+router.put('/fcmToken', isAuth, updateFcmToken);
+router.delete('/deleteAccount', isAuth, deleteAccount);
 
 router.post('/redeemCode', isAuth, redeemCode);
 

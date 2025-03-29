@@ -44,12 +44,12 @@ exports.createVideo = [
     .withMessage('يجب أن يكون رابط التنزيل لفيديو 480 نصاً.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       // Verify if the associated course exists
       const courseExists = await Course.exists({ _id: req.body.course });
       if (!courseExists) {
@@ -119,12 +119,12 @@ exports.getVideos = async (req, res) => {
 exports.deleteVideo = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف الفيديو بشكل صحيح.'),
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
       const video = await Video.findByIdAndDelete(req.params.id);
       if (!video) {
         return res

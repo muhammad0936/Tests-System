@@ -120,13 +120,13 @@ exports.getCodesGroups = [
   query('expirationTo').optional().isISO8601(),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const {
         page = 1,
         limit = 10,
@@ -290,13 +290,13 @@ exports.deleteCodesGroup = [
     .withMessage('يرجى إدخال رقم تعريف المجموعة بشكل صحيح.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const group = await CodesGroup.findById(req.params.id);
 
       if (!group) {

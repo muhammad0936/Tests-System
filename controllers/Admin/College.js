@@ -115,7 +115,7 @@ exports.getCollegeById = [
 // Update a college by ID
 exports.updateCollege = [
   param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الكلية بشكل صحيح.'),
-  body('name').optional().notEmpty().withMessage('يرجى إدخال اسم الكلية.'),
+  body('name').optional().isString().withMessage('يرجى إدخال اسم الكلية كنص.'),
   body('university')
     .optional()
     .isMongoId()
@@ -134,13 +134,20 @@ exports.updateCollege = [
     .withMessage('رابط الوصول يجب أن يكون نصاً.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const baccCollege = await College.findOne({ name: 'بكالوريا' });
+      console.log('college : ', baccCollege);
+      if (baccCollege?._id.toString() === req.params.id) {
+        delete req.body.name;
+        delete req.body.numOfYears;
+        delete req.body.university;
+      }
       const college = await College.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
       });
@@ -154,6 +161,7 @@ exports.updateCollege = [
         .status(200)
         .json({ college: { _id, name, icon, university, numOfYears } });
     } catch (err) {
+      console.error(err);
       res.status(500).json({ error: 'حدث خطأ أثناء معالجة الطلب.' });
     }
   },
@@ -164,13 +172,13 @@ exports.deleteCollege = [
   param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الكلية بشكل صحيح.'),
 
   async (req, res) => {
-    await ensureIsAdmin(req.userId);
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const college = await College.findByIdAndDelete(req.params.id);
       if (!college) {
         return res
