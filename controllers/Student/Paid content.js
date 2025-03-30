@@ -7,6 +7,7 @@ const University = require('../../models/University');
 const Question = require('../../models/QuestionGroup');
 const Course = require('../../models/Course');
 const Video = require('../../models/Video');
+const QuestionGroup = require('../../models/QuestionGroup');
 
 //[[[[[[[[[[[]]]]]]]]]]]
 exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
@@ -82,7 +83,7 @@ exports.getUniversitiesWithAccessibleMaterials = async (req, res) => {
       totalDocs: result?.docs?.length,
     });
   } catch (err) {
-    console.log(err);
+    console.error(err.message);
     res.status(err.statusCode || 500).json({
       error: err.message || 'حدث خطأ في الخادم.',
     });
@@ -164,7 +165,7 @@ exports.getAccessibleCollegesByUniversity = async (req, res) => {
       totalDocs: colleges?.docs?.length,
     });
   } catch (err) {
-    console.log(err);
+    console.error(err.message);
     res.status(err.statusCode || 500).json({
       error: err.message || 'حدث خطأ في الخادم.',
     });
@@ -231,7 +232,7 @@ exports.getAccessibleMaterials = async (req, res) => {
 
     res.status(200).json(materials);
   } catch (err) {
-    console.log(err);
+    console.error(err.message);
     res
       .status(err.statusCode || 500)
       .json({ error: err.message || 'حدث خطأ في الخادم.' });
@@ -391,7 +392,6 @@ exports.getAccessibleCoursesByMaterial = async (req, res) => {
     const currentPage = parseInt(page, 10);
 
     // Get total number of accessible courses for pagination metadata
-    console.log(accessibleCodesGroups.flatMap((group) => group));
     const totalCourses = await Course.countDocuments({
       material: materialId,
       _id: {
@@ -507,6 +507,95 @@ exports.getAccessibleVideosByCourse = async (req, res) => {
     console.error('Error in getAccessibleVideosByCourse:', err);
     res.status(err.statusCode || 500).json({
       error: err.message || 'حدث خطأ في الخادم.',
+    });
+  }
+};
+
+exports.getQuestionGroupWithQuestion = async (req, res) => {
+  try {
+    const { questionGroupId, questionIndex } = req.query;
+    const studentId = req.userId;
+
+    // Validate input parameters
+    if (!questionGroupId || !questionIndex) {
+      return res
+        .status(400)
+        .json({ message: 'معرف المجموعة وفهرس السؤال مطلوبان.' }); // "Question group ID and question index are required."
+    }
+    if (!mongoose.Types.ObjectId.isValid(questionGroupId)) {
+      return res.status(400).json({ message: 'صيغة معرف المجموعة غير صالحة.' }); // "Invalid question group ID format."
+    }
+    if (isNaN(questionIndex) || questionIndex < 0) {
+      return res
+        .status(400)
+        .json({ message: 'فهرس السؤال يجب أن يكون عدداً صحيحاً غير سالب.' }); // "Question index must be a non-negative integer."
+    }
+
+    // Find the student
+    const student = await Student.findById(studentId).select('redeemedCodes');
+    if (!student) {
+      return res
+        .status(404)
+        .json({ message: 'عذراً، لم يتم العثور على الطالب.' }); // "Student not found."
+    }
+    // Retrieve the question group
+    const questionGroup = await QuestionGroup.findById(questionGroupId)
+      .select('questions name description material') // Fetch only relevant fields
+      .lean();
+
+    if (!questionGroup) {
+      return res.status(404).json({ message: 'لم يتم العثور على المجموعة.' }); // "Question group not found."
+    }
+
+    // Check if the question index is within bounds
+    if (questionIndex >= questionGroup.questions.length) {
+      return res.status(400).json({ message: 'فهرس السؤال خارج النطاق.' }); // "Question index out of range."
+    }
+    const now = new Date();
+    let hasAccess = false;
+
+    // Check access rights for the specified question group
+    for (const redemption of student.redeemedCodes) {
+      const codesGroup = await CodesGroup.findOne({
+        _id: redemption.codesGroup,
+        expiration: { $gt: now },
+        materials: questionGroup.material,
+        codes: {
+          $elemMatch: {
+            value: redemption.code,
+            isUsed: true,
+          },
+        },
+      })
+        .select('_id')
+        .lean();
+
+      if (codesGroup) {
+        hasAccess = true;
+        break;
+      }
+    }
+
+    if (!hasAccess) {
+      return res
+        .status(403)
+        .json({ message: 'ليس لديك صلاحية الوصول لهذه المجموعة.' }); // "You don't have access to this question group."
+    }
+
+    // Get the specific question by its index
+    const selectedQuestion = questionGroup.questions[questionIndex];
+
+    // Modify the question group to include only the selected question
+    const response = {
+      ...questionGroup,
+      questions: [selectedQuestion],
+    };
+
+    res.status(200).json(response);
+  } catch (err) {
+    console.error('Error in getQuestionGroupWithQuestion:', err);
+    res.status(err.statusCode || 500).json({
+      error: err.message || 'حدث خطأ في الخادم.', // "An error occurred on the server."
     });
   }
 };

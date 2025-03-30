@@ -9,7 +9,7 @@ const {
   deleteAccount,
   sendOtp,
 } = require('../controllers/Student/Auth');
-const { redeemCode } = require('../controllers/Student/Code');
+const { redeemCode, getCodesInfo } = require('../controllers/Student/Code');
 const { getFreeMaterials } = require('../controllers/Student/FreeMaterial');
 const { getFreeQuestions } = require('../controllers/Student/FreeQuestion');
 const {
@@ -19,6 +19,7 @@ const {
   getAccessibleQuestions,
   getAccessibleCoursesByMaterial,
   getAccessibleVideosByCourse,
+  getQuestionGroupWithQuestion,
 } = require('../controllers/Student/Paid content');
 const {
   getFreeCourses,
@@ -32,6 +33,7 @@ const {
   removeFavoriteQuestionGroup,
 } = require('../controllers/Student/Favorite');
 const { updateFcmToken } = require('../controllers/Student/FcmToken');
+const { getSellCenters } = require('../controllers/Admin/SellCenter');
 router.post('/otp', sendOtp);
 router.post('/signup', signup);
 router.post('/login', login);
@@ -49,6 +51,7 @@ router.get('/universities', isAuth, getUniversitiesWithAccessibleMaterials);
 router.get('/colleges', isAuth, getAccessibleCollegesByUniversity);
 router.get('/materials', isAuth, getAccessibleMaterials);
 router.get('/questions', isAuth, getAccessibleQuestions);
+router.get('/question', isAuth, getQuestionGroupWithQuestion);
 router.get('/courses', isAuth, getAccessibleCoursesByMaterial);
 router.get('/videos', isAuth, getAccessibleVideosByCourse);
 router.get('/resolutions', getResolutions);
@@ -59,5 +62,9 @@ router.put('/profile', isAuth, updateProfile);
 router.post('/favorites', isAuth, addFavoriteQuestionGroup);
 router.delete('/favorites', isAuth, removeFavoriteQuestionGroup);
 router.get('/favorites', isAuth, getFavoriteQuestionGroups);
+
+router.get('/sellCenters', isAuth, getSellCenters);
+
+router.get('/redeemCodes', isAuth, getCodesInfo);
 
 module.exports = router;

@@ -171,15 +171,19 @@ exports.getFavoriteQuestionGroups = async (req, res) => {
         .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
     }
     let returnedFavorites = student.favorites.map((f) => {
-      const question = f.questionGroup.questions[f.index];
-      const newF = { ...f.questionGroup._doc, question, index: f.index };
+      const questions = [f.questionGroup.questions[f.index]];
+      const newF = {
+        ...f.questionGroup._doc,
+        questions,
+        index: f.index,
+      };
       return newF;
     });
-    returnedFavorites = returnedFavorites.map((r) => {
-      delete r.questions;
-      return r;
-    });
-    console.log(returnedFavorites);
+    // returnedFavorites = returnedFavorites.map((r) => {
+    //   delete r.questions;
+    //   return r;
+    // });
+    // console.log(returnedFavorites);
     res.status(200).json({ favorites: returnedFavorites });
   } catch (err) {
     console.error('Error in getFavoriteQuestionGroups:', err);

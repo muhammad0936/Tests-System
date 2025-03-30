@@ -100,3 +100,42 @@ exports.redeemCode = [
     }
   },
 ];
+
+exports.getCodesInfo = async (req, res) => {
+  try {
+    // Extract the user ID from the request object
+    const userId = req.userId;
+
+    // Find the student document by ID and populate necessary fields
+    const student = await Student.findById(userId).populate({
+      path: 'redeemedCodes.codesGroup',
+      select: 'expiration',
+      populate: [
+        {
+          path: 'materials',
+          select: 'name year',
+        },
+        {
+          path: 'courses',
+          select: 'name',
+        },
+      ],
+    });
+
+    // Check if the student exists
+    if (!student) {
+      return res.status(404).json({
+        message: 'لم يتم العثور على الطالب', // "Student not found"
+      });
+    }
+
+    // Retrieve and return the redeemed codes
+    const { redeemedCodes } = student;
+    return res.status(200).json(redeemedCodes);
+  } catch (error) {
+    // Handle unexpected server errors
+    return res.status(error.statusCode || 500).json({
+      error: error.message || 'حدث خطأ في الخادم.', // "An error occurred on the server"
+    });
+  }
+};

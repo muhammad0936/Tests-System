@@ -14,7 +14,7 @@ exports.sendNotificationToAllStudents = async (req, res, next) => {
     }
 
     // Fetch all students from the database
-    const students = await Student.find({}, 'fname lname email'); // You can select only needed fields to optimize performance
+    const students = await Student.find({}, 'fname lname email fcmToken'); // You can select only needed fields to optimize performance
     if (students.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         message: 'No students found.',
@@ -47,7 +47,7 @@ exports.sendNotificationToAllStudents = async (req, res, next) => {
     };
 
     // Use Firebase Admin SDK to send notifications
-    const response = await admin.messaging().sendMulticast({
+    const response = await admin.messaging().sendEachForMulticast({
       tokens,
       ...payload,
     });
@@ -58,7 +58,7 @@ exports.sendNotificationToAllStudents = async (req, res, next) => {
       results: response.responses, // Optional: detailed results
     });
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('Error sending notification:', error.message);
     next(error); // Pass error to the error-handling middleware
   }
 };

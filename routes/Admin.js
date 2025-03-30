@@ -62,6 +62,10 @@ const { getBaccalaureate } = require('../controllers/Admin/GetBaccalaureate');
 const {
   sendNotificationToAllStudents,
 } = require('../controllers/Admin/Notification');
+const {
+  createSellCenter,
+  deleteSellCenter,
+} = require('../controllers/Admin/SellCenter');
 
 router.get('/baccalaureate', getBaccalaureate);
 router.post('/uploadVideo', BunnyVideoUploader, uploadVideo);
@@ -111,5 +115,8 @@ router.post('/changeFreeQuestions', multerGlobal, isAuth, copyQuestionsToFree);
 router.get('/teachersStatistics', multerGlobal, isAuth, getTeachersStatistics);
 
 router.post('/sendNotification', isAuth, sendNotificationToAllStudents);
+
+router.post('/sellCenter', isAuth, createSellCenter);
+router.delete('/sellCenter/:id', isAuth, deleteSellCenter);
 
 module.exports = router;
