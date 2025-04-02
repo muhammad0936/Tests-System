@@ -50,6 +50,7 @@ const studentSchema = new Schema(
         index: Number,
       },
     ],
+    isBlocked: { type: Boolean, default: false },
     fcmToken: String,
     resetToken: String,
     resetTokenExpiration: Date,
