@@ -58,7 +58,6 @@ const BunnyVideoUploader = require('../middlewares/BunnyVideoUpload');
 const { uploadImage } = require('../controllers/Admin/UploadImage');
 const BunnyImageUploader = require('../middlewares/BunnyImageUpload');
 const { getTeachersStatistics } = require('../controllers/Admin/Statistics');
-const { getBaccalaureate } = require('../controllers/Admin/GetBaccalaureate');
 const {
   sendNotificationToAllStudents,
 } = require('../controllers/Admin/Notification');
@@ -67,7 +66,6 @@ const {
   deleteSellCenter,
 } = require('../controllers/Admin/SellCenter');
 
-router.get('/baccalaureate', getBaccalaureate);
 router.post('/uploadVideo', BunnyVideoUploader, uploadVideo);
 router.post('/uploadImage', BunnyImageUploader, uploadImage);
 router.post('/admin', multerGlobal, createAdmin);

@@ -140,14 +140,6 @@ exports.updateCollege = [
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-
-      const baccCollege = await College.findOne({ name: 'بكالوريا' });
-      console.log('college : ', baccCollege);
-      if (baccCollege?._id.toString() === req.params.id) {
-        delete req.body.name;
-        delete req.body.numOfYears;
-        delete req.body.university;
-      }
       const college = await College.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
       });

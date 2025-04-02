@@ -95,8 +95,6 @@ exports.updateUniversity = [
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const baccUniversity = await University.findOne({ name: 'بكالوريا' });
-      if (baccUniversity._id.toString() === req.params.id) delete req.body.name;
       const university = await University.findByIdAndUpdate(
         req.params.id,
         req.body,

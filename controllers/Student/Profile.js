@@ -21,14 +21,6 @@ exports.getProfile = async (req, res, next) => {
         message: 'لم يتم العثور على الطالب.',
       });
     }
-    if (
-      student.university.name === 'بكالوريا' ||
-      student.college.name === 'بكالوريا'
-    ) {
-      delete student.university;
-      delete student.college;
-      delete student.year;
-    }
     res.status(StatusCodes.OK).json({
       message: 'تم جلب بيانات الملف الشخصي بنجاح.',
       profile: student,
@@ -109,14 +101,6 @@ exports.updateProfile = [
       const student = await Student.findById(req.userId)
         .populate('university', 'name')
         .populate('college', 'name numOfYears');
-      if (
-        student.university.name === 'بكالوريا' ||
-        student.college.name === 'بكالوريا'
-      ) {
-        delete updates.university;
-        delete updates.college;
-        delete updates.year;
-      }
       console.log(updates);
 
       if (!student) {
