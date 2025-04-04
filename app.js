@@ -17,11 +17,16 @@ const adminRouter = require('./routes/Admin');
 const studentRouter = require('./routes/Student');
 
 const connectToDatabase = require('./database/connection');
-
+// In your Express setup
+app.use(express.json());
+app.use(
+  express.raw({ type: 'application/offset+octet-stream', limit: '50GB' })
+);
 app.use(bodyParser());
 app.use(cors());
 app.use(helmet());
 app.use(compression());
+
 // const accessLogStream = fs.createWriteStream(
 //   path.join(__dirname, 'data', 'access.log'),
 //   { flags: 'a' }

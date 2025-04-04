@@ -34,6 +34,7 @@ const {
 } = require('../controllers/Student/Favorite');
 const { updateFcmToken } = require('../controllers/Student/FcmToken');
 const { getSellCenters } = require('../controllers/Admin/SellCenter');
+const { getUserNotifications } = require('../controllers/Student/Notification');
 router.post('/otp', sendOtp);
 router.post('/signup', signup);
 router.post('/login', login);
@@ -66,5 +67,7 @@ router.get('/favorites', isAuth, getFavoriteQuestionGroups);
 router.get('/sellCenters', isAuth, getSellCenters);
 
 router.get('/redeemCodes', isAuth, getCodesInfo);
+
+router.get('/notifications', isAuth, getUserNotifications);
 
 module.exports = router;

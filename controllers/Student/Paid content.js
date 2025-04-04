@@ -252,47 +252,47 @@ exports.getAccessibleQuestions = async (req, res) => {
       return res.status(400).json({ message: 'صيغة معرف المادة غير صالحة.' });
     }
 
-    // Convert to ObjectId once
+    // Convert material id and verify material exists
     const materialId = new mongoose.Types.ObjectId(material);
 
-    // Verify material exists
-    const materialExists = await Material.exists({ _id: materialId });
-    if (!materialExists) {
-      return res
-        .status(404)
-        .json({ message: 'عذراً، لم يتم العثور على المادة.' });
-    }
-
-    // Get student with redeemed codes
-    const student = await Student.findById(studentId).select('redeemedCodes');
+    // Retrieve student with redeemed codes and favorites
+    const student = await Student.findById(studentId)
+      .select('redeemedCodes favorites')
+      .lean();
     if (!student) {
       return res
         .status(404)
         .json({ message: 'عذراً، لم يتم العثور على الطالب.' });
     }
 
-    const now = new Date();
-    let hasAccess = false;
+    // Build favorites lookup map for constant time checks
+    const favoriteMap = new Map();
+    student.favorites.forEach((fav) => {
+      const key = `${fav.questionGroup}_${fav.index}`;
+      favoriteMap.set(key, true);
+    });
 
-    // Check each redemption for valid access
-    for (const redemption of student.redeemedCodes) {
-      const codesGroup = await CodesGroup.findOne({
-        _id: redemption.codesGroup,
-        expiration: { $gt: now },
-        materials: materialId,
-        codes: {
-          $elemMatch: {
-            value: redemption.code,
-            isUsed: true,
-          },
-        },
-      })
+    const now = new Date();
+
+    // Build an array of redemption queries to check access in one go
+    const redemptionQueries = student.redeemedCodes.map((redemption) => ({
+      _id: redemption.codesGroup,
+      expiration: { $gt: now },
+      materials: materialId,
+      codes: {
+        $elemMatch: { value: redemption.code, isUsed: true },
+      },
+    }));
+
+    // Check if any redemption gives access using one consolidated query
+    let hasAccess = false;
+    if (redemptionQueries.length > 0) {
+      const codesGroup = await CodesGroup.findOne({ $or: redemptionQueries })
         .select('_id')
         .lean();
 
       if (codesGroup) {
         hasAccess = true;
-        break;
       }
     }
 
@@ -302,28 +302,40 @@ exports.getAccessibleQuestions = async (req, res) => {
       });
     }
 
-    // Implement pagination
+    // Parse pagination parameters
     const pageSize = parseInt(limit, 10);
     const currentPage = parseInt(page, 10);
 
-    // Get total number of questions for pagination metadata
-    const totalQuestions = await Question.countDocuments({
-      material: materialId,
-    });
-
-    // Retrieve questions with pagination
+    // Retrieve questions with pagination and required population
     const questions = await Question.find({ material: materialId })
       .skip((currentPage - 1) * pageSize)
       .limit(pageSize)
-      .select('-__v -createdAt -updatedAt') // Exclude unnecessary fields
-      .populate('material', 'name'); // Populate material details
+      .select('-__v -createdAt -updatedAt')
+      .populate({ path: 'material', select: 'name' })
+      .lean();
 
+    // Enhance questions: iterate with index to add isFavorite flag efficiently
+    const enhancedQuestions = [];
+    for (const questionGroup of questions) {
+      if (Array.isArray(questionGroup.questions)) {
+        const questionsWithFavorites = [];
+        for (let i = 0; i < questionGroup.questions.length; i++) {
+          const key = `${questionGroup._id.toString()}_${i}`;
+          questionsWithFavorites.push({
+            ...questionGroup.questions[i],
+            isFavorite: favoriteMap.has(key),
+          });
+        }
+        questionGroup.questions = questionsWithFavorites;
+      }
+      enhancedQuestions.push(questionGroup);
+    }
     res.status(200).json({
-      docs: questions,
-      totalDocs: totalQuestions,
+      docs: enhancedQuestions,
+      totalDocs: enhancedQuestions.length,
       limit: pageSize,
       page: currentPage,
-      totalPages: Math.ceil(totalQuestions / pageSize),
+      totalPages: Math.ceil(enhancedQuestions.length / pageSize),
     });
   } catch (err) {
     console.error('Error in getAccessibleQuestions:', err);
@@ -510,7 +522,6 @@ exports.getAccessibleVideosByCourse = async (req, res) => {
     });
   }
 };
-
 exports.getQuestionGroupWithQuestion = async (req, res) => {
   try {
     const { questionGroupId, questionIndex } = req.query;
@@ -518,74 +529,75 @@ exports.getQuestionGroupWithQuestion = async (req, res) => {
 
     // Validate input parameters
     if (!questionGroupId || !questionIndex) {
-      return res
-        .status(400)
-        .json({ message: 'معرف المجموعة وفهرس السؤال مطلوبان.' }); // "Question group ID and question index are required."
+      return res.status(400).json({
+        message: 'معرف المجموعة وفهرس السؤال مطلوبان.',
+      });
     }
     if (!mongoose.Types.ObjectId.isValid(questionGroupId)) {
-      return res.status(400).json({ message: 'صيغة معرف المجموعة غير صالحة.' }); // "Invalid question group ID format."
+      return res.status(400).json({
+        message: 'صيغة معرف المجموعة غير صالحة.',
+      });
     }
     if (isNaN(questionIndex) || questionIndex < 0) {
-      return res
-        .status(400)
-        .json({ message: 'فهرس السؤال يجب أن يكون عدداً صحيحاً غير سالب.' }); // "Question index must be a non-negative integer."
+      return res.status(400).json({
+        message: 'فهرس السؤال يجب أن يكون عدداً صحيحاً غير سالب.',
+      });
     }
 
-    // Find the student
-    const student = await Student.findById(studentId).select('redeemedCodes');
+    // Parallel fetch of student and question group
+    const [student, questionGroup] = await Promise.all([
+      Student.findById(studentId).select('redeemedCodes favorites').lean(),
+      QuestionGroup.findById(questionGroupId)
+        .select('questions name description material')
+        .lean(),
+    ]);
+
     if (!student) {
-      return res
-        .status(404)
-        .json({ message: 'عذراً، لم يتم العثور على الطالب.' }); // "Student not found."
+      return res.status(404).json({
+        message: 'عذراً، لم يتم العثور على الطالب.',
+      });
     }
-    // Retrieve the question group
-    const questionGroup = await QuestionGroup.findById(questionGroupId)
-      .select('questions name description material') // Fetch only relevant fields
-      .lean();
-
     if (!questionGroup) {
-      return res.status(404).json({ message: 'لم يتم العثور على المجموعة.' }); // "Question group not found."
+      return res.status(404).json({
+        message: 'لم يتم العثور على المجموعة.',
+      });
     }
-
-    // Check if the question index is within bounds
     if (questionIndex >= questionGroup.questions.length) {
-      return res.status(400).json({ message: 'فهرس السؤال خارج النطاق.' }); // "Question index out of range."
+      return res.status(400).json({
+        message: 'فهرس السؤال خارج النطاق.',
+      });
     }
-    const now = new Date();
-    let hasAccess = false;
 
-    // Check access rights for the specified question group
-    for (const redemption of student.redeemedCodes) {
-      const codesGroup = await CodesGroup.findOne({
-        _id: redemption.codesGroup,
-        expiration: { $gt: now },
-        materials: questionGroup.material,
-        codes: {
-          $elemMatch: {
-            value: redemption.code,
-            isUsed: true,
-          },
-        },
-      })
-        .select('_id')
-        .lean();
+    // Create favorite lookup map
+    const favoriteMap = new Map(
+      student.favorites.map((fav) => [
+        `${fav.questionGroup}_${fav.index}`,
+        true,
+      ])
+    );
 
-      if (codesGroup) {
-        hasAccess = true;
-        break;
-      }
-    }
+    // Check access using single optimized query
+    const hasAccess = await CodesGroup.exists({
+      _id: { $in: student.redeemedCodes.map((r) => r.codesGroup) },
+      expiration: { $gt: new Date() },
+      materials: questionGroup.material,
+      'codes.value': { $in: student.redeemedCodes.map((r) => r.code) },
+      'codes.isUsed': true,
+    });
 
     if (!hasAccess) {
-      return res
-        .status(403)
-        .json({ message: 'ليس لديك صلاحية الوصول لهذه المجموعة.' }); // "You don't have access to this question group."
+      return res.status(403).json({
+        message: 'ليس لديك صلاحية الوصول لهذه المجموعة.',
+      });
     }
 
-    // Get the specific question by its index
-    const selectedQuestion = questionGroup.questions[questionIndex];
+    // Get the specific question with isFavorite flag
+    const selectedQuestion = {
+      ...questionGroup.questions[questionIndex],
+      isFavorite: favoriteMap.has(`${questionGroupId}_${questionIndex}`),
+    };
 
-    // Modify the question group to include only the selected question
+    // Build response with only the selected question
     const response = {
       ...questionGroup,
       questions: [selectedQuestion],
@@ -594,8 +606,8 @@ exports.getQuestionGroupWithQuestion = async (req, res) => {
     res.status(200).json(response);
   } catch (err) {
     console.error('Error in getQuestionGroupWithQuestion:', err);
-    res.status(err.statusCode || 500).json({
-      error: err.message || 'حدث خطأ في الخادم.', // "An error occurred on the server."
+    res.status(500).json({
+      error: 'حدث خطأ في الخادم.',
     });
   }
 };
