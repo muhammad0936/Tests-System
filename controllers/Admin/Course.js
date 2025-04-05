@@ -17,39 +17,54 @@ exports.createCourse = [
     .withMessage('وصف الدورة يجب أن يكون نصاً.'),
   body('material').isMongoId().withMessage('معرف المادة غير صحيح.'),
   body('teacher').isMongoId().withMessage('معرف المدرس غير صحيح.'),
-  body('PromoVideo720.accessUrl')
+  // Correct the field names to use lowercase 'promoVideo720' and 'promoVideo480'
+  body('promoVideo720.accessUrl')
     .optional()
     .isString()
     .withMessage('رابط الوصول للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
-  body('PromoVideo720.videoId')
+  body('promoVideo720.videoId')
     .optional()
     .isString()
     .withMessage('معرف الفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
-  body('PromoVideo720.libraryId')
+  body('promoVideo720.libraryId')
     .optional()
     .isString()
     .withMessage('معرف المكتبة للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
-  body('PromoVideo720.downloadUrl')
+  body('promoVideo720.downloadUrl')
     .optional()
     .isString()
     .withMessage('رابط التنزيل للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
 
-  body('PromoVideo480.accessUrl')
+  body('promoVideo480.accessUrl')
     .optional()
     .isString()
     .withMessage('رابط الوصول للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
-  body('PromoVideo480.videoId')
+  body('promoVideo480.videoId')
     .optional()
     .isString()
     .withMessage('معرف الفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
-  body('PromoVideo480.libraryId')
+  body('promoVideo480.libraryId')
     .optional()
     .isString()
     .withMessage('معرف المكتبة للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
-  body('PromoVideo480.downloadUrl')
+  body('promoVideo480.downloadUrl')
     .optional()
     .isString()
     .withMessage('رابط التنزيل للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
+
+  // Add validation for seekPoints
+  body('seekPoints')
+    .optional()
+    .isArray()
+    .withMessage('seekPoints يجب أن تكون مصفوفة.'),
+  body('seekPoints.*.moment')
+    .notEmpty()
+    .isString()
+    .withMessage('moment يجب أن يكون نصاً ولا يمكن أن يكون فارغاً.'),
+  body('seekPoints.*.description')
+    .notEmpty()
+    .isString()
+    .withMessage('الوصف يجب أن يكون نصاً ولا يمكن أن يكون فارغاً.'),
 
   async (req, res) => {
     try {
@@ -70,6 +85,7 @@ exports.createCourse = [
           .json({ message: 'عذراً، لم يتم العثور على المادة.' });
       const course = new Course(req.body);
       await course.save();
+      // Include seekPoints in the destructured object
       const {
         _id,
         name,
@@ -78,6 +94,7 @@ exports.createCourse = [
         teacher,
         promoVideo720,
         promoVideo480,
+        seekPoints,
       } = course;
       res.status(201).json({
         course: {
@@ -88,6 +105,7 @@ exports.createCourse = [
           teacher,
           promoVideo720,
           promoVideo480,
+          seekPoints, // Include seekPoints in the response
         },
       });
     } catch (err) {
@@ -97,7 +115,6 @@ exports.createCourse = [
     }
   },
 ];
-
 // controllers/courseController.js
 
 exports.getCourses = async (req, res) => {
@@ -209,7 +226,8 @@ exports.getCourses = async (req, res) => {
       //   { path: 'material', select: 'name' },
       //   { path: 'teacher', select: 'fname lname phone' },
       // ],
-      select: 'name description material teacher promoVideo720 promoVideo480',
+      select:
+        'name description material teacher promoVideo720 promoVideo480 seekPoints',
     });
 
     return res.status(200).json(courses);

@@ -31,6 +31,12 @@ const courseSchema = new Schema(
       libraryId: String,
       donwnloadUrl: String,
     },
+    seekPoints: [
+      {
+        moment: String,
+        description: String,
+      },
+    ],
   },
   { timestamps: true }
 );

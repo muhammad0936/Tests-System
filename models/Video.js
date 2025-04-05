@@ -20,6 +20,12 @@ const videoSchema = new Schema(
       libraryId: String,
       donwnloadUrl: String,
     },
+    seekPoints: [
+      {
+        moment: String,
+        description: String,
+      },
+    ],
     course: {
       type: Schema.Types.ObjectId,
       ref: 'Course',

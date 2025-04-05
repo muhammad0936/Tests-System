@@ -43,6 +43,20 @@ exports.createVideo = [
     .isString()
     .withMessage('يجب أن يكون رابط التنزيل لفيديو 480 نصاً.'),
 
+  // Add validation for seekPoints
+  body('seekPoints')
+    .optional()
+    .isArray()
+    .withMessage('seekPoints يجب أن تكون مصفوفة.'),
+  body('seekPoints.*.moment')
+    .notEmpty()
+    .isString()
+    .withMessage('moment يجب أن يكون نصاً ولا يمكن أن يكون فارغاً.'),
+  body('seekPoints.*.description')
+    .notEmpty()
+    .isString()
+    .withMessage('الوصف يجب أن يكون نصاً ولا يمكن أن يكون فارغاً.'),
+
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
@@ -50,7 +64,6 @@ exports.createVideo = [
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      // Verify if the associated course exists
       const courseExists = await Course.exists({ _id: req.body.course });
       if (!courseExists) {
         return res
@@ -60,10 +73,10 @@ exports.createVideo = [
       const video = new Video(req.body);
       await video.save();
 
-      // Destructure to send back an appropriate response
-      const { _id, name, video720, video480, course } = video;
+      // Include seekPoints in the response
+      const { _id, name, video720, video480, course, seekPoints } = video;
       res.status(201).json({
-        video: { _id, name, video720, video480, course },
+        video: { _id, name, video720, video480, course, seekPoints },
       });
     } catch (err) {
       res
@@ -72,7 +85,6 @@ exports.createVideo = [
     }
   },
 ];
-
 // Get videos with pagination and filters
 exports.getVideos = async (req, res) => {
   try {
@@ -104,7 +116,7 @@ exports.getVideos = async (req, res) => {
       page: parseInt(page, 10) || 1,
       limit: parseInt(limit, 10) || 10,
       populate: { path: 'course', select: 'name description' },
-      select: 'name video course video720 video480',
+      select: 'name video course video720 video480 seekPoints',
     });
 
     res.status(200).json(videos);
