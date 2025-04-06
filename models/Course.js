@@ -23,13 +23,7 @@ const courseSchema = new Schema(
       accessUrl: String,
       videoId: String,
       libraryId: String,
-      donwnloadUrl: String,
-    },
-    promoVideo480: {
-      accessUrl: String,
-      videoId: String,
-      libraryId: String,
-      donwnloadUrl: String,
+      downloadUrl: String,
     },
     seekPoints: [
       {

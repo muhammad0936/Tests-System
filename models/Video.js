@@ -12,13 +12,7 @@ const videoSchema = new Schema(
       accessUrl: String,
       videoId: String,
       libraryId: String,
-      donwnloadUrl: String,
-    },
-    video480: {
-      accessUrl: String,
-      videoId: String,
-      libraryId: String,
-      donwnloadUrl: String,
+      downloadUrl: String,
     },
     seekPoints: [
       {

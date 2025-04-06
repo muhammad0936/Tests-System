@@ -17,7 +17,7 @@ exports.createCourse = [
     .withMessage('وصف الدورة يجب أن يكون نصاً.'),
   body('material').isMongoId().withMessage('معرف المادة غير صحيح.'),
   body('teacher').isMongoId().withMessage('معرف المدرس غير صحيح.'),
-  // Correct the field names to use lowercase 'promoVideo720' and 'promoVideo480'
+  // Correct the field names to use lowercase 'promoVideo720'
   body('promoVideo720.accessUrl')
     .optional()
     .isString()
@@ -34,23 +34,6 @@ exports.createCourse = [
     .optional()
     .isString()
     .withMessage('رابط التنزيل للفيديو الترويجي بجودة 720 يجب أن يكون نصاً.'),
-
-  body('promoVideo480.accessUrl')
-    .optional()
-    .isString()
-    .withMessage('رابط الوصول للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
-  body('promoVideo480.videoId')
-    .optional()
-    .isString()
-    .withMessage('معرف الفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
-  body('promoVideo480.libraryId')
-    .optional()
-    .isString()
-    .withMessage('معرف المكتبة للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
-  body('promoVideo480.downloadUrl')
-    .optional()
-    .isString()
-    .withMessage('رابط التنزيل للفيديو الترويجي بجودة 480 يجب أن يكون نصاً.'),
 
   // Add validation for seekPoints
   body('seekPoints')
@@ -83,9 +66,16 @@ exports.createCourse = [
         return res
           .status(400)
           .json({ message: 'عذراً، لم يتم العثور على المادة.' });
+      if (req.body.promoVideo720) {
+        const playDataUrl = `https://video.bunnycdn.com/library/${req.body.promoVideo720?.libraryId}/videos/${req.body.promoVideo720?.videoId}/play?expires=0`;
+        const videoPlayData = await axios.get(playDataUrl, {
+          // AccessKey: API_KEY,
+        });
+        req.body.promoVideo720.downloadUrl = videoPlayData?.data?.fallbackUrl;
+      }
+      console.log(req.body);
       const course = new Course(req.body);
       await course.save();
-      // Include seekPoints in the destructured object
       const {
         _id,
         name,
@@ -93,7 +83,6 @@ exports.createCourse = [
         material,
         teacher,
         promoVideo720,
-        promoVideo480,
         seekPoints,
       } = course;
       res.status(201).json({
@@ -104,8 +93,7 @@ exports.createCourse = [
           material,
           teacher,
           promoVideo720,
-          promoVideo480,
-          seekPoints, // Include seekPoints in the response
+          seekPoints,
         },
       });
     } catch (err) {
@@ -179,16 +167,6 @@ exports.getCourses = async (req, res) => {
         query.year = year;
       }
       const materialsByCollege = await Material.find(query).select('_id');
-      // if (!materialsByCollege.length) {
-      //   if (!query.year)
-      //     return res
-      //       .status(400)
-      //       .json({ message: 'لا توجد مواد مرتبطة بالكلية المحددة.' });
-      //   else
-      //     return res
-      //       .status(400)
-      //       .json({ message: 'لا توجد مواد مرتبطة بالسنةالأكاديمية المحددة.' });
-      // }
       const materialIds = materialsByCollege.map((m) => m._id);
       filter.material = { $in: materialIds };
     }
@@ -222,12 +200,7 @@ exports.getCourses = async (req, res) => {
     const courses = await Course.paginate(filter, {
       page: parseInt(page, 10) || 1,
       limit: parseInt(limit, 10) || 10,
-      // populate: [
-      //   { path: 'material', select: 'name' },
-      //   { path: 'teacher', select: 'fname lname phone' },
-      // ],
-      select:
-        'name description material teacher promoVideo720 promoVideo480 seekPoints',
+      select: 'name description material teacher promoVideo720 seekPoints',
     });
 
     return res.status(200).json(courses);
@@ -238,7 +211,6 @@ exports.getCourses = async (req, res) => {
   }
 };
 
-// Delete a course by ID
 exports.deleteCourse = [
   param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الدورة بشكل صحيح.'),
   async (req, res) => {

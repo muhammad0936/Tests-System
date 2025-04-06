@@ -26,23 +26,6 @@ exports.createVideo = [
     .isString()
     .withMessage('يجب أن يكون رابط التنزيل لفيديو 720 نصاً.'),
 
-  body('video480.accessUrl')
-    .optional()
-    .isString()
-    .withMessage('يجب أن يكون رابط الوصول لفيديو 480 نصاً.'),
-  body('video480.videoId')
-    .optional()
-    .isString()
-    .withMessage('يجب أن يكون معرف الفيديو لفيديو 480 نصاً.'),
-  body('video480.libraryId')
-    .optional()
-    .isString()
-    .withMessage('يجب أن يكون معرف المكتبة لفيديو 480 نصاً.'),
-  body('video480.downloadUrl')
-    .optional()
-    .isString()
-    .withMessage('يجب أن يكون رابط التنزيل لفيديو 480 نصاً.'),
-
   // Add validation for seekPoints
   body('seekPoints')
     .optional()
@@ -70,13 +53,20 @@ exports.createVideo = [
           .status(400)
           .json({ message: 'عذراً، لم يتم العثور على الدورة.' });
       }
+      if (req.body.video720) {
+        const playDataUrl = `https://video.bunnycdn.com/library/${req.body.video720?.libraryId}/videos/${req.body.video720?.videoId}/play?expires=0`;
+        const videoPlayData = await axios.get(playDataUrl, {
+          // AccessKey: API_KEY,
+        });
+        req.body.video720.downloadUrl = videoPlayData?.data?.fallbackUrl;
+      }
       const video = new Video(req.body);
       await video.save();
 
       // Include seekPoints in the response
-      const { _id, name, video720, video480, course, seekPoints } = video;
+      const { _id, name, video720, course, seekPoints } = video;
       res.status(201).json({
-        video: { _id, name, video720, video480, course, seekPoints },
+        video: { _id, name, video720, course, seekPoints },
       });
     } catch (err) {
       res
@@ -116,7 +106,7 @@ exports.getVideos = async (req, res) => {
       page: parseInt(page, 10) || 1,
       limit: parseInt(limit, 10) || 10,
       populate: { path: 'course', select: 'name description' },
-      select: 'name video course video720 video480 seekPoints',
+      select: 'name video course video720 seekPoints',
     });
 
     res.status(200).json(videos);
