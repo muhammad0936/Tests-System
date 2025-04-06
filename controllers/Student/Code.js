@@ -24,11 +24,14 @@ exports.redeemCode = [
       const { code } = req.body;
       const studentId = req.userId;
 
-      // 1. Find the code in CodesGroups
+      // 1. Find the code in CodesGroups and populate materials/courses
       const codesGroup = await CodesGroup.findOne(
         { 'codes.value': code },
         { 'codes.$': 1, expiration: 1, materials: 1, courses: 1 }
-      ).session(session);
+      )
+        .populate('materials') // Populate material details
+        .populate('courses') // Populate course details
+        .session(session);
 
       if (!codesGroup) {
         return res
