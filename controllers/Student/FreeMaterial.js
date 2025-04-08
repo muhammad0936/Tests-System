@@ -32,7 +32,11 @@ exports.getFreeMaterials = async (req, res) => {
     const materials = await Material.paginate(filter, {
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 10,
-      select: '-__v -createdAt -updatedAt',
+      select: '-__v -createdAt -updatedAt', // Fields to exclude
+      populate: {
+        path: 'college', // The field to populate
+        select: '_id', // Select only the _id from the populated field
+      },
     });
     res.status(200).json(materials);
   } catch (err) {
