@@ -26,12 +26,24 @@ exports.redeemCode = [
 
       // 1. Find the code in CodesGroups and populate materials/courses
       const codesGroup = await CodesGroup.findOne(
-        { 'codes.value': code },
-        { 'codes.$': 1, expiration: 1, materials: 1, courses: 1 }
+        { 'codes.value': code }, // Search condition
+        { 'codes.$': 1, expiration: 1, materials: 1, courses: 1 } // Projection
       )
-        .populate('materials') // Populate material details
-        .populate('courses') // Populate course details
-        .session(session);
+        .populate({
+          path: 'materials',
+          populate: {
+            path: 'college',
+            select: '_id', // Nested populate for 'materials'
+          },
+        })
+        .populate({
+          path: 'courses',
+          populate: {
+            path: 'material',
+            select: '_id', // Nested populate for 'courses'
+          },
+        })
+        .session(session); // Add session for transaction if applicable
 
       if (!codesGroup) {
         return res
