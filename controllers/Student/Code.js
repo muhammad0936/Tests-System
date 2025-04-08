@@ -33,17 +33,23 @@ exports.redeemCode = [
           path: 'materials',
           populate: {
             path: 'college',
-            select: '_id', // Nested populate for 'materials'
+            select: '_id', // Select only _id for college
           },
         })
         .populate({
           path: 'courses',
-          populate: {
-            path: 'material',
-            select: '_id', // Nested populate for 'courses'
-          },
+          populate: [
+            {
+              path: 'material',
+              select: '_id', // Select only _id for material
+            },
+            {
+              path: 'teacher',
+              select: 'fname lname', // Select fname and lname for teacher
+            },
+          ],
         })
-        .session(session); // Add session for transaction if applicable
+        .session(session); // Include session for transaction, if applicable
 
       if (!codesGroup) {
         return res
