@@ -17,8 +17,13 @@ exports.addFavoriteQuestionGroup = [
   body('index')
     .notEmpty()
     .withMessage('موقع السؤال مطلوب')
-    .isNumeric()
-    .withMessage('موقع السؤال يجب أن يكون رقما'),
+    .custom((value) => {
+      // Check if the value is a number and not a numeric string
+      if (typeof value !== 'number') {
+        throw new Error('موقع السؤال يجب أن يكون رقما حقيقيا');
+      }
+      return true;
+    }),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -27,8 +32,8 @@ exports.addFavoriteQuestionGroup = [
 
     try {
       const studentId = req.userId;
-      const { questionGroupId, index = 0 } = req.body;
-
+      let { questionGroupId, index = 0 } = req.body;
+      index = +index;
       // Verify that the question group exists
       console.log(questionGroupId);
       const questionGroup = await QuestionGroup.findById(questionGroupId);
