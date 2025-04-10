@@ -139,6 +139,10 @@ exports.getCodesInfo = async (req, res) => {
         {
           path: 'courses',
           select: 'name',
+          populate: {
+            path: 'material',
+            select: '_id',
+          },
         },
       ],
     });
