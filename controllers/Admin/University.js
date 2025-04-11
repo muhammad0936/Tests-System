@@ -1,6 +1,7 @@
 const { ensureIsAdmin } = require('../../util/ensureIsAdmin');
 const University = require('../../models/University'); // Adjust the path as necessary
 const { body, param, validationResult } = require('express-validator');
+const { default: axios } = require('axios');
 
 // Create a new university
 exports.createUniversity = [
@@ -116,7 +117,6 @@ exports.updateUniversity = [
 // Delete a university by ID
 exports.deleteUniversity = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
-
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
@@ -125,16 +125,60 @@ exports.deleteUniversity = [
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const university = await University.findByIdAndDelete(req.params.id);
+      const university = await University.findById(req.params.id);
       if (!university) {
         return res
           .status(404)
           .json({ error: 'عذراً، لم يتم العثور على الجامعة.' });
       }
 
-      res.status(200).json({ message: 'تم حذف الجامعة بنجاح.' });
+      // Capture file info before deletion
+      const bunnyDeletions = [];
+      if (university.icon?.accessUrl) {
+        bunnyDeletions.push({
+          type: 'icon',
+          accessUrl: university.icon.accessUrl,
+        });
+      }
+
+      // Delete database entry
+      await University.deleteOne({ _id: req.params.id });
+
+      // Process file deletions
+      const deletionResults = [];
+      for (const file of bunnyDeletions) {
+        try {
+          await axios.delete(file.accessUrl, {
+            headers: {
+              Accept: 'application/json',
+              AccessKey: process.env.BUNNY_STORAGE_API_KEY,
+            },
+          });
+          deletionResults.push({ type: file.type, status: 'success' });
+        } catch (error) {
+          deletionResults.push({
+            type: file.type,
+            status: 'error',
+            error: error.response?.data || error.message,
+          });
+        }
+      }
+
+      res.status(200).json({
+        message: 'تم حذف الجامعة بنجاح.',
+        details: {
+          databaseDeleted: true,
+          bunnyDeletions: deletionResults,
+        },
+      });
     } catch (err) {
-      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
+      res.status(500).json({
+        error: 'حدث خطأ في الخادم.',
+        details: {
+          databaseDeleted: false,
+          bunnyDeletions: [],
+        },
+      });
     }
   },
 ];

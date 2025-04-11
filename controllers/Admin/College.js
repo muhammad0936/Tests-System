@@ -2,6 +2,7 @@ const { ensureIsAdmin } = require('../../util/ensureIsAdmin');
 const College = require('../../models/College'); // Adjust the path if necessary
 const { body, param, validationResult } = require('express-validator');
 const University = require('../../models/University');
+const { default: axios } = require('axios');
 
 // Create a new college
 exports.createCollege = [
@@ -162,7 +163,6 @@ exports.updateCollege = [
 // Delete a college by ID
 exports.deleteCollege = [
   param('id').isMongoId().withMessage('يرجى إدخال رقم تعريف الكلية بشكل صحيح.'),
-
   async (req, res) => {
     try {
       await ensureIsAdmin(req.userId);
@@ -171,15 +171,57 @@ exports.deleteCollege = [
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const college = await College.findByIdAndDelete(req.params.id);
+      const college = await College.findById(req.params.id);
       if (!college) {
         return res
           .status(404)
           .json({ error: 'عذرًا، لم يتم العثور على الكلية.' });
       }
-      res.status(200).json({ message: 'تم حذف الكلية بنجاح.' });
+
+      const bunnyDeletions = [];
+      if (college.icon?.accessUrl) {
+        bunnyDeletions.push({
+          type: 'icon',
+          accessUrl: college.icon.accessUrl,
+        });
+      }
+
+      await College.deleteOne({ _id: req.params.id });
+
+      const deletionResults = [];
+      for (const file of bunnyDeletions) {
+        try {
+          await axios.delete(file.accessUrl, {
+            headers: {
+              Accept: 'application/json',
+              AccessKey: process.env.BUNNY_STORAGE_API_KEY,
+            },
+          });
+          deletionResults.push({ type: file.type, status: 'success' });
+        } catch (error) {
+          deletionResults.push({
+            type: file.type,
+            status: 'error',
+            error: error.response?.data || error.message,
+          });
+        }
+      }
+
+      res.status(200).json({
+        message: 'تم حذف الكلية بنجاح.',
+        details: {
+          databaseDeleted: true,
+          bunnyDeletions: deletionResults,
+        },
+      });
     } catch (err) {
-      res.status(500).json({ error: 'حدث خطأ أثناء معالجة الطلب.' });
+      res.status(500).json({
+        error: 'حدث خطأ أثناء معالجة الطلب.',
+        details: {
+          databaseDeleted: false,
+          bunnyDeletions: [],
+        },
+      });
     }
   },
 ];
