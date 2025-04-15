@@ -147,8 +147,7 @@ exports.getFreeVideos = [
         {
           page: parseInt(page) || 1,
           limit: parseInt(limit) || 10,
-          select:
-            '-video720 -video480 -__v -createdAt -updatedAt -course -seekPoints',
+          select: '-video720 -__v -createdAt -updatedAt -course -seekPoints',
         }
       );
 

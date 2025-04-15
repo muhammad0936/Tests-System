@@ -11,11 +11,13 @@ exports.createQuestionGroup = [
     .isString()
     .withMessage('يجب أن تكون الفقرة نصية.'),
 
-  body('image.filename')
+  // Updated image validation for array
+  body('images').optional().isArray().withMessage('يجب أن تكون الصور مصفوفة.'),
+  body('images.*.filename')
     .optional()
     .isString()
     .withMessage('يجب أن يكون اسم الملف نصاً.'),
-  body('image.accessUrl')
+  body('images.*.accessUrl')
     .optional()
     .isString()
     .withMessage('يجب أن يكون رابط الوصول نصاً.'),
@@ -144,6 +146,7 @@ exports.createQuestionGroup = [
   },
 ];
 
+// getQuestionGroups remains unchanged
 exports.getQuestionGroups = async (req, res) => {
   try {
     await ensureIsAdmin(req.userId);
@@ -198,11 +201,15 @@ exports.deleteQuestionGroup = [
       // Capture all files for deletion
       const bunnyDeletions = [];
 
-      // Group image
-      if (group.image?.accessUrl) {
-        bunnyDeletions.push({
-          type: 'question_image',
-          accessUrl: group.image.accessUrl,
+      // Group images (updated for array)
+      if (group.images?.length > 0) {
+        group.images.forEach((image) => {
+          if (image.accessUrl) {
+            bunnyDeletions.push({
+              type: 'question_image',
+              accessUrl: image.accessUrl,
+            });
+          }
         });
       }
 

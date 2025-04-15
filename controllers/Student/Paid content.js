@@ -548,7 +548,7 @@ exports.getQuestionGroupWithQuestion = async (req, res) => {
     const [student, questionGroup] = await Promise.all([
       Student.findById(studentId).select('redeemedCodes favorites').lean(),
       QuestionGroup.findById(questionGroupId)
-        .select('paragraph questions material')
+        .select('paragraph images questions material')
         .lean(),
     ]);
 
