@@ -82,7 +82,6 @@ exports.createCourse = [
         });
         req.body.promoVideo720.downloadUrl = videoPlayData?.data?.fallbackUrl;
       }
-      console.log(req.body);
       const course = new Course(req.body);
       await course.save();
       const {

@@ -35,9 +35,7 @@ exports.addFavoriteQuestionGroup = [
       let { questionGroupId, index = 0 } = req.body;
       index = +index;
       // Verify that the question group exists
-      console.log(questionGroupId);
       const questionGroup = await QuestionGroup.findById(questionGroupId);
-      console.log(questionGroup);
       if (!questionGroup) {
         return res.status(404).json({
           message: 'عذراً، لم يتم العثور على مجموعة الأسئلة.',

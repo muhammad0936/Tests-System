@@ -8,7 +8,7 @@ const studentSchema = new Schema(
     lname: { type: String },
     email: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
-    phone: { type: String, unique: true },
+    phone: String,
     image: {
       filename: String,
       accessUrl: String,
@@ -88,4 +88,14 @@ studentSchema.index(
     partialFilterExpression: { 'redeemedCodes.code': { $exists: true } },
   }
 );
+studentSchema.index(
+  { phone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      phone: { $type: 'string' }, // 👈 Only index non-null strings
+    },
+  }
+);
+
 module.exports = mongoose.model('Student', studentSchema);

@@ -101,7 +101,6 @@ exports.updateProfile = [
       const student = await Student.findById(req.userId)
         .populate('university', 'name')
         .populate('college', 'name numOfYears');
-      console.log(updates);
 
       if (!student) {
         return res.status(StatusCodes.NOT_FOUND).json({

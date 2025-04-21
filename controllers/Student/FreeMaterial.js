@@ -28,7 +28,6 @@ exports.getFreeMaterials = async (req, res) => {
         message: `هذا الطالب لديه سنة دراسية غير صالحة، يجب أن تكون بين 0 و ${college.numOfYears}.`,
       });
     filter.year = Number(student.year);
-    console.log(filter);
     const materials = await Material.paginate(filter, {
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 10,

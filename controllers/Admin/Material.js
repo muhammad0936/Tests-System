@@ -40,7 +40,6 @@ exports.createMaterial = [
         return res
           .status(400)
           .json({ message: 'عذراً، لم يتم العثور على الكلية.' });
-      console.log(loadedCollege, req.body.year);
       if (loadedCollege.numOfYears < req.body.year || req.body.year <= 0)
         return res.status(400).json({
           message: `الكلية تحتوي على ${loadedCollege.numOfYears} سنوات، والسنة المقدمة هي ${req.body.year}.`,

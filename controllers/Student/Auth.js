@@ -102,7 +102,7 @@ exports.sendOtp = async (req, res) => {
 
     // Send the OTP via email.
     await transporter.sendMail({
-      from: 'Fahim Team',
+      from: '"فريق فهيم" <fhym6278@gmail.com>',
       to: email,
       subject: 'كلمة المرور لمرة واحدة',
       html: `
@@ -229,7 +229,7 @@ exports.signup = [
         image,
       } = req.body;
 
-      console.log(`Signup requested for email: ${email}`);
+      // console.log(`Signup requested for email: ${email}`);
 
       // Validate required fields.
       if (!fname || !year) {

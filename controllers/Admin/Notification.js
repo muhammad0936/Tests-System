@@ -85,7 +85,7 @@ exports.sendNotificationToAllStudents = async (req, res) => {
       { fcmToken: { $exists: true, $ne: '' } },
       'fcmToken _id' // Include student ID for notification storage
     ).cursor();
-    console.log(cursor);
+    // console.log(cursor);
     try {
       let batch = [];
       for await (const student of cursor) {
@@ -100,9 +100,9 @@ exports.sendNotificationToAllStudents = async (req, res) => {
         processedCount++;
 
         if (batch.length >= BATCH_SIZE || processedCount % 10000 === 0) {
-          console.log(
-            `Processing batch ${Math.ceil(processedCount / BATCH_SIZE)}`
-          );
+          // console.log(
+          //   `Processing batch ${Math.ceil(processedCount / BATCH_SIZE)}`
+          // );
 
           // Process batch and store notifications
           const result = await sendBatch(batch, title, message);
