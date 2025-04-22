@@ -10,6 +10,14 @@ exports.createQuestionGroup = [
     .optional()
     .isString()
     .withMessage('يجب أن تكون الفقرة نصية.'),
+  body('prevYearTitle')
+    .optional()
+    .isString()
+    .withMessage('يجب أن تكون معلومات الدورة نصية نصية.'),
+  body('materialSection')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون القسم نصاً.'),
 
   // Updated image validation for array
   body('images').optional().isArray().withMessage('يجب أن تكون الصور مصفوفة.'),

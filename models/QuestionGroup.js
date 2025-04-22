@@ -16,6 +16,8 @@ const questionGroupSchema = new Schema(
       ref: 'Material',
       required: true,
     },
+    prevYearTitle: String,
+    materialSection: String,
     questions: [
       {
         isEnglish: {
