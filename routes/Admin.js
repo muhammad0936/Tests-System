@@ -3,7 +3,11 @@ const router = express.Router();
 const isAuth = require('../middlewares/isAuth');
 const multerMiddleware = require('../middlewares/multerWithFiles');
 const multerGlobal = require('../middlewares/multerGlobal');
-const { createAdmin, login } = require('../controllers/Admin/Auth');
+const {
+  createAdmin,
+  login,
+  updatePassword,
+} = require('../controllers/Admin/Auth');
 const {
   createUniversity,
   getUniversities,
@@ -73,8 +77,9 @@ const {
 
 router.post('/addVideo', addVideo);
 router.post('/uploadImage', BunnyImageUploader, uploadImage);
-router.post('/admin', multerGlobal, createAdmin);
+router.post('/admin', isAuth, multerGlobal, createAdmin);
 router.post('/login', multerGlobal, login);
+router.post('/updatePassword', isAuth, multerGlobal, updatePassword);
 
 router.get('/students', multerGlobal, isAuth, getStudents);
 router.put('/toggleBlock/:id', multerGlobal, isAuth, blockStudent);
