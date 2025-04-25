@@ -168,6 +168,12 @@ const validateSignup = [
     .withMessage('رمز otp مطلوب')
     .isString()
     .withMessage('رمز otp يجب أن يكون نصاً'),
+  body('deviceId')
+    .trim()
+    .notEmpty()
+    .withMessage('رمز deviceId مطلوب')
+    .isString()
+    .withMessage('رمز deviceId يجب أن يكون نصاً'),
 
   body('password').trim().notEmpty().withMessage('كلمة المرور مطلوبة.'),
   body('phone')
@@ -202,6 +208,12 @@ const validateSignup = [
 const validateLogin = [
   body('email').notEmpty().withMessage('البريد الالكتروني مطلوب.'),
   body('password').trim().notEmpty().withMessage('كلمة المرور مطلوبة.'),
+  body('deviceId')
+    .trim()
+    .notEmpty()
+    .withMessage('رمز deviceId مطلوب')
+    .isString()
+    .withMessage('رمز deviceId يجب أن يكون نصاً'),
 ];
 
 exports.signup = [
@@ -222,6 +234,7 @@ exports.signup = [
         email,
         otp,
         password,
+        deviceId,
         phone,
         university,
         college,
@@ -277,6 +290,11 @@ exports.signup = [
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: 'الرجاء إدخال الرمز التأكيدي.' });
       }
+      if (!deviceId) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: 'الرجاء إدخال معرف الجهاز.' });
+      }
 
       // Retrieve the OTP record sent to the specified email.
       const otpRecord = await Otp.findOne({ email });
@@ -318,6 +336,7 @@ exports.signup = [
         fname,
         lname,
         email,
+        deviceId,
         phone,
         password: hashedPassword,
         year,
@@ -357,7 +376,7 @@ exports.login = [
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      const { email, password } = req.body;
+      const { email, password, deviceId } = req.body;
       const loadedStudent = await Student.findOne({ email })
         .select('+password')
         .lean();
@@ -378,6 +397,11 @@ exports.login = [
         return res
           .status(401)
           .json({ message: 'بيانات تسجيل الدخول غير صالحة!' });
+      }
+      if (loadedStudent.deviceId !== deviceId) {
+        return res
+          .status(401)
+          .json({ message: 'لا يمكن فتح الحساب من جهاز مختلف' });
       }
 
       const token = jwt.sign(
