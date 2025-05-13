@@ -75,6 +75,54 @@ exports.createVideo = [
     }
   },
 ];
+
+exports.updateVideo = [
+  param('id')
+    .isMongoId()
+    .withMessage('يرجى إدخال معرف الفيديو بشكل صحيح.'),
+  body('name')
+    .optional()
+    .isString()
+    .withMessage('اسم الفيديو يجب أن يكون نصاً.'),
+  body('seekPoints')
+    .optional()
+    .isArray()
+    .withMessage('يجب أن تكون نقاط البحث مصفوفة.'),
+  body('seekPoints.*.moment')
+    .notEmpty()
+    .isString()
+    .withMessage('لحظة النقطة مطلوبة.'),
+  body('seekPoints.*.description')
+    .notEmpty()
+    .isString()
+    .withMessage('وصف النقطة مطلوب.'),
+  async (req, res) => {
+    try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { name, seekPoints } = req.body;
+      const updateData = { name, seekPoints };
+      
+      const video = await Video.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).select('name seekPoints course video720');
+
+      if (!video) {
+        return res.status(404).json({ error: 'الفيديو غير موجود.' });
+      }
+
+      res.status(200).json(video);
+    } catch (err) {
+      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
+    }
+  },
+];
 // Get videos with pagination and filters
 exports.getVideos = async (req, res) => {
   try {

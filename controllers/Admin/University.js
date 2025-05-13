@@ -50,6 +50,50 @@ exports.getUniversities = async (req, res) => {
   }
 };
 
+exports.updateUniversity = [
+  param('id')
+    .isMongoId()
+    .withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
+  body('name')
+    .optional()
+    .isString()
+    .withMessage('اسم الجامعة يجب أن يكون نصاً.'),
+  body('icon.filename')
+    .optional()
+    .isString()
+    .withMessage('اسم ملف الأيقونة يجب أن يكون نصاً.'),
+  body('icon.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('رابط الأيقونة يجب أن يكون نصاً.'),
+  async (req, res) => {
+    try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { name, icon } = req.body;
+      const updateData = { name, icon };
+      
+      const university = await University.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).select('name icon');
+
+      if (!university) {
+        return res.status(404).json({ error: 'الجامعة غير موجودة.' });
+      }
+
+      res.status(200).json(university);
+    } catch (err) {
+      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
+    }
+  },
+];
+
 // Get a university by ID
 exports.getUniversityById = [
   param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
@@ -70,44 +114,6 @@ exports.getUniversityById = [
           .json({ error: 'عذراً، لم يتم العثور على الجامعة.' });
       }
       res.status(200).json(university);
-    } catch (err) {
-      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
-    }
-  },
-];
-
-// Update a university by ID
-exports.updateUniversity = [
-  param('id').isMongoId().withMessage('يرجى إدخال معرف الجامعة بشكل صحيح.'),
-  body('icon.filename')
-    .optional()
-    .isString()
-    .withMessage('يجب أن يكون اسم الملف نصاً.'),
-  body('icon.accessUrl')
-    .optional()
-    .isString()
-    .withMessage('يجب أن يكون رابط الوصول نصاً.'),
-
-  async (req, res) => {
-    try {
-      await ensureIsAdmin(req.userId);
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const university = await University.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true }
-      );
-      if (!university) {
-        return res
-          .status(404)
-          .json({ error: 'عذراً، لم يتم العثور على الجامعة.' });
-      }
-      const { _id, name, icon = '' } = university;
-      res.status(200).json({ university: { _id, name, icon } });
     } catch (err) {
       res.status(500).json({ error: 'حدث خطأ في الخادم.' });
     }

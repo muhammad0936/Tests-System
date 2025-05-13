@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 const Teacher = require('../../models/Teacher');
 const { ensureIsAdmin } = require('../../util/ensureIsAdmin');
+
 exports.getTeachersStatistics = async (req, res) => {
   try {
     await ensureIsAdmin(req.userId);
-    const stats = await mongoose.model('Teacher').aggregate([
+
+    const stats = await Teacher.aggregate([
       {
         $lookup: {
           from: 'courses',
@@ -13,7 +15,6 @@ exports.getTeachersStatistics = async (req, res) => {
           as: 'courses',
         },
       },
-      // Filter out teachers with empty courses array immediately
       {
         $match: {
           'courses.0': { $exists: true },
@@ -39,6 +40,14 @@ exports.getTeachersStatistics = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: 'materials',
+          localField: 'courses.material',
+          foreignField: '_id',
+          as: 'materialInfo',
+        },
+      },
+      {
         $group: {
           _id: '$_id',
           name: {
@@ -50,7 +59,9 @@ exports.getTeachersStatistics = async (req, res) => {
             $push: {
               courseId: '$courses._id',
               name: '$courses.name',
-              material: '$courses.material',
+              material: {
+                $arrayElemAt: ['$materialInfo.name', 0],
+              },
               numberOfRedemptions: {
                 $ifNull: [{ $arrayElemAt: ['$redemptions.usedCount', 0] }, 0],
               },

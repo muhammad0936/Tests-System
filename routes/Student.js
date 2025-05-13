@@ -20,6 +20,7 @@ const {
   getAccessibleCoursesByMaterial,
   getAccessibleVideosByCourse,
   getQuestionGroupWithQuestion,
+  getCourseFiles,
 } = require('../controllers/Student/Paid content');
 const {
   getFreeCourses,
@@ -35,6 +36,7 @@ const {
 const { updateFcmToken } = require('../controllers/Student/FcmToken');
 const { getSellCenters } = require('../controllers/Admin/SellCenter');
 const { getUserNotifications } = require('../controllers/Student/Notification');
+const { getLectures } = require('../controllers/Student/Lecture');
 router.post('/otp', sendOtp);
 router.post('/signup', signup);
 router.post('/login', login);
@@ -51,9 +53,12 @@ router.get('/freeCourses', isAuth, getFreeCourses),
 router.get('/universities', isAuth, getUniversitiesWithAccessibleMaterials);
 router.get('/colleges', isAuth, getAccessibleCollegesByUniversity);
 router.get('/materials', isAuth, getAccessibleMaterials);
+router.get('/lectures/:material', isAuth, getLectures);
+
 router.get('/questions', isAuth, getAccessibleQuestions);
 router.get('/question', isAuth, getQuestionGroupWithQuestion);
 router.get('/courses', isAuth, getAccessibleCoursesByMaterial);
+router.get('/courseFiles/:course', isAuth, getCourseFiles);
 router.get('/videos', isAuth, getAccessibleVideosByCourse);
 router.get('/resolutions', getResolutions);
 

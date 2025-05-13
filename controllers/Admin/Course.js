@@ -113,8 +113,66 @@ exports.createCourse = [
     }
   },
 ];
-// controllers/courseController.js
 
+exports.updateCourse = [
+  param('id')
+    .isMongoId()
+    .withMessage('يرجى إدخال معرف الدورة بشكل صحيح.'),
+  body('name')
+    .optional()
+    .isString()
+    .withMessage('اسم الدورة يجب أن يكون نصاً.'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('الوصف يجب أن يكون نصاً.'),
+  body('icon.filename')
+    .optional()
+    .isString()
+    .withMessage('اسم ملف الأيقونة يجب أن يكون نصاً.'),
+  body('icon.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('رابط الأيقونة يجب أن يكون نصاً.'),
+  body('seekPoints')
+    .optional()
+    .isArray()
+    .withMessage('يجب أن تكون نقاط البحث مصفوفة.'),
+  body('seekPoints.*.moment')
+    .notEmpty()
+    .isString()
+    .withMessage('لحظة النقطة مطلوبة.'),
+  body('seekPoints.*.description')
+    .notEmpty()
+    .isString()
+    .withMessage('وصف النقطة مطلوب.'),
+  async (req, res) => {
+    try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { name, description, icon, seekPoints } = req.body;
+      const updateData = { name, description, icon, seekPoints };
+      
+      const course = await Course.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).select('name description icon seekPoints material teacher');
+
+      if (!course) {
+        return res.status(404).json({ error: 'الدورة غير موجودة.' });
+      }
+
+      res.status(200).json(course);
+    } catch (err) {
+      res.status(500).json({ error: 'حدث خطأ في الخادم.' });
+    }
+  },
+];
 exports.getCourses = async (req, res) => {
   try {
     await ensureIsAdmin(req.userId);

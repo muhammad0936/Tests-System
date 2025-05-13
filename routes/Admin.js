@@ -37,11 +37,13 @@ const {
   createCourse,
   getCourses,
   deleteCourse,
+  updateCourse,
 } = require('../controllers/Admin/Course');
 const {
   createVideo,
   getVideos,
   deleteVideo,
+  updateVideo,
 } = require('../controllers/Admin/Video');
 const {
   createCodesGroup,
@@ -74,6 +76,16 @@ const {
   blockStudent,
   checkBlockedStatus,
 } = require('../controllers/Admin/Student');
+const {
+  createLecture,
+  deleteLecture,
+  getLecturesByMaterial,
+} = require('../controllers/Admin/Lecture');
+const {
+  createCourseFile,
+  getCourseFilesByCourse,
+  deleteCourseFile,
+} = require('../controllers/Admin/CourseFile');
 
 router.post('/addVideo', addVideo);
 router.post('/uploadImage', BunnyImageUploader, uploadImage);
@@ -101,6 +113,15 @@ router.post('/material', multerGlobal, isAuth, createMaterial);
 router.get('/materials', multerGlobal, isAuth, getMaterials);
 router.delete('/material/:id', multerGlobal, isAuth, deleteMaterial);
 
+router.post('/lecture', multerGlobal, isAuth, createLecture);
+router.get(
+  '/lectures/:materialId',
+  multerGlobal,
+  isAuth,
+  getLecturesByMaterial
+);
+router.delete('/lecture/:id', multerGlobal, isAuth, deleteLecture);
+
 router.post('/questions', multerGlobal, isAuth, createQuestionGroup);
 router.get('/questions', multerGlobal, isAuth, getQuestionGroups);
 router.delete('/question/:id', multerGlobal, isAuth, deleteQuestionGroup);
@@ -111,10 +132,21 @@ router.delete('/teacher/:id', multerGlobal, isAuth, deleteTeacher);
 
 router.post('/course', multerGlobal, isAuth, createCourse);
 router.get('/courses', multerGlobal, isAuth, getCourses);
+router.put('/course/:id', multerGlobal, isAuth, updateCourse);
 router.delete('/course/:id', multerGlobal, isAuth, deleteCourse);
+
+router.post('/courseFile', multerGlobal, isAuth, createCourseFile);
+router.get(
+  '/courseFiles/:courseId',
+  multerGlobal,
+  isAuth,
+  getCourseFilesByCourse
+);
+router.delete('/courseFile/:id', multerGlobal, isAuth, deleteCourseFile);
 
 router.post('/video', multerGlobal, isAuth, createVideo);
 router.get('/videos', multerGlobal, isAuth, getVideos);
+router.put('/video/:id', multerGlobal, isAuth, updateVideo);
 router.delete('/video/:id', multerGlobal, isAuth, deleteVideo);
 
 router.post('/codesGroup', multerGlobal, isAuth, createCodesGroup);
