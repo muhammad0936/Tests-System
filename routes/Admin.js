@@ -72,6 +72,7 @@ const {
 const {
   createSellCenter,
   deleteSellCenter,
+  updateSellCenter,
 } = require('../controllers/Admin/SellCenter');
 const {
   getStudents,
@@ -177,6 +178,7 @@ router.get('/teachersStatistics', multerGlobal, isAuth, getTeachersStatistics);
 router.post('/sendNotification', isAuth, sendNotificationToAllStudents);
 
 router.post('/sellCenter', isAuth, createSellCenter);
+router.put('/sellCenter/:id', isAuth, updateSellCenter);
 router.delete('/sellCenter/:id', isAuth, deleteSellCenter);
 
 module.exports = router;
