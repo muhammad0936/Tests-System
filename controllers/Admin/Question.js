@@ -153,7 +153,109 @@ exports.createQuestionGroup = [
     }
   },
 ];
+exports.updateQuestionGroup = [
+  param('id')
+    .isMongoId()
+    .withMessage('معرف مجموعة الأسئلة غير صالح.'),
+  body('paragraph')
+    .optional()
+    .isString()
+    .withMessage('يجب أن تكون الفقرة نصية.'),
+  body('prevYearTitle')
+    .optional()
+    .isString()
+    .withMessage('يجب أن تكون معلومات الدورة نصية.'),
+  body('materialSection')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون القسم نصاً.'),
+  body('images')
+    .optional()
+    .isArray()
+    .withMessage('يجب أن تكون الصور مصفوفة.'),
+  body('images.*.filename')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون اسم الملف نصاً.'),
+  body('images.*.accessUrl')
+    .optional()
+    .isString()
+    .withMessage('يجب أن يكون رابط الوصول نصاً.'),
+  body('material')
+    .optional()
+    .isMongoId()
+    .withMessage('معرف المادة غير صالح.'),
 
+  async (req, res) => {
+    try {
+      await ensureIsAdmin(req.userId);
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const groupId = req.params.id;
+      const updateData = req.body;
+      const group = await QuestionGroup.findById(groupId);
+
+      if (!group) {
+        return res.status(404).json({ message: 'مجموعة الأسئلة غير موجودة.' });
+      }
+
+      // تحديث المادة مع التحقق من وجودها
+      if (updateData.material) {
+        const materialExists = await Material.exists({ _id: updateData.material });
+        if (!materialExists) {
+          return res.status(400).json({ message: 'المادة المحددة غير موجودة.' });
+        }
+        group.material = updateData.material;
+      }
+
+      // معالجة الصور المرفقة
+      if (updateData.images !== undefined) {
+        const oldImages = group.images || [];
+        const newImages = updateData.images;
+
+        // تحديد الصور المحذوفة
+        const imagesToDelete = oldImages.filter(oldImage => 
+          !newImages.some(newImage => newImage.accessUrl === oldImage.accessUrl)
+        );
+
+        // حذف الصور من التخزين
+        for (const image of imagesToDelete) {
+          try {
+            await axios.delete(image.accessUrl, {
+              headers: {
+                Accept: 'application/json',
+                AccessKey: process.env.BUNNY_STORAGE_API_KEY,
+              },
+            });
+          } catch (error) {
+            console.error('فشل في حذف الصورة:', image.accessUrl, error.message);
+          }
+        }
+
+        group.images = newImages;
+      }
+
+      // تحديث الحقول الأخرى
+      if (updateData.paragraph !== undefined) group.paragraph = updateData.paragraph;
+      if (updateData.prevYearTitle !== undefined) group.prevYearTitle = updateData.prevYearTitle;
+      if (updateData.materialSection !== undefined) group.materialSection = updateData.materialSection;
+
+      await group.save();
+
+      res.json({
+        message: 'تم تحديث مجموعة الأسئلة بنجاح.',
+        group,
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        error: err.message || 'حدث خطأ في الخادم.' 
+      });
+    }
+  },
+];
 // getQuestionGroups remains unchanged
 exports.getQuestionGroups = async (req, res) => {
   try {

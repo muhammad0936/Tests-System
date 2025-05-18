@@ -26,6 +26,7 @@ const {
   createMaterial,
   getMaterials,
   deleteMaterial,
+  updateMaterial,
 } = require('../controllers/Admin/Material');
 
 const {
@@ -60,6 +61,7 @@ const {
   deleteQuestionGroup,
   deleteQuestion,
   updateQuestion,
+  updateQuestionGroup,
 } = require('../controllers/Admin/Question');
 const { addVideo } = require('../controllers/Admin/UploadVideo');
 const BunnyVideoUploader = require('../middlewares/BunnyVideoUpload');
@@ -83,6 +85,7 @@ const {
   createLecture,
   deleteLecture,
   getLecturesByMaterial,
+  updateLecture,
 } = require('../controllers/Admin/Lecture');
 const {
   createCourseFile,
@@ -114,6 +117,7 @@ router.delete('/college/:id', multerGlobal, isAuth, deleteCollege);
 
 router.post('/material', multerGlobal, isAuth, createMaterial);
 router.get('/materials', multerGlobal, isAuth, getMaterials);
+router.put('/material/:id', multerGlobal, isAuth, updateMaterial);
 router.delete('/material/:id', multerGlobal, isAuth, deleteMaterial);
 
 router.post('/lecture', multerGlobal, isAuth, createLecture);
@@ -123,10 +127,12 @@ router.get(
   isAuth,
   getLecturesByMaterial
 );
+router.put('/lecture/:id', multerGlobal, isAuth, updateLecture);
 router.delete('/lecture/:id', multerGlobal, isAuth, deleteLecture);
 
 router.post('/questions', multerGlobal, isAuth, createQuestionGroup);
 router.get('/questions', multerGlobal, isAuth, getQuestionGroups);
+router.put('/questionGroup/:id', multerGlobal, isAuth, updateQuestionGroup);
 router.delete('/question/:id', multerGlobal, isAuth, deleteQuestionGroup); // Delete a question
 router.delete(
   '/question/:questionGroupId/:questionIndex',
@@ -135,7 +141,7 @@ router.delete(
   deleteQuestion
 );
 
-// Edit a question
+// Edit inner question
 router.put(
   '/question/:questionGroupId/:questionIndex',
   multerGlobal,

@@ -1,6 +1,5 @@
 const FreeQuestionGroup = require('../../models/FreeQuestionGroup');
 const QuestionGroup = require('../../models/QuestionGroup');
-const Material = require('../../models/Material');
 const { ensureIsAdmin } = require('../../util/ensureIsAdmin');
 const { body, validationResult } = require('express-validator');
 const mongoose = require('mongoose');
@@ -18,63 +17,68 @@ exports.copyQuestionsToFree = [
       }
 
       const { numOfGroups } = req.body;
-      let totalCopied = 0;
 
-      // حذف جميع المجموعات المجانية الحالية
+      // 1. Clear existing free groups
       await FreeQuestionGroup.deleteMany({});
 
-      // جلب جميع المواد التي تحتوي على مجموعات أسئلة
-      const materials = await Material.find({
-        _id: { $in: await QuestionGroup.distinct('material') },
-      });
+      // 2. Find and sample groups in single query
+      const groups = await QuestionGroup.aggregate([
+        { $match: { $expr: { $eq: [{ $size: "$questions" }, 1] } } },
+        { $sample: { size: numOfGroups } },
+        { $project: { 
+          material: 1,
+          paragraph: 1,
+          images: 1,
+          prevYearTitle: 1,
+          materialSection: 1,
+          questions: {
+            $map: {
+              input: "$questions",
+              as: "q",
+              in: {
+                isEnglish: "$$q.isEnglish",
+                text: "$$q.text",
+                isMultipleChoice: "$$q.isMultipleChoice",
+                choices: "$$q.choices",
+                information: "$$q.information",
+                infoImages: "$$q.infoImages"
+              }
+            }
+          }
+        }}
+      ]);
 
-      // معالجة كل مادة
-      for (const material of materials) {
-        // اختيار مجموعات عشوائية من المادة الحالية
-        const groups = await QuestionGroup.aggregate([
-          { $match: { material: material._id } },
-          { $sample: { size: numOfGroups } },
-          {
-            $project: {
-              __v: 0,
-              createdAt: 0,
-              updatedAt: 0,
-              'questions._id': 0,
-              'questions.createdAt': 0,
-              'questions.updatedAt': 0,
-            },
-          },
-        ]);
-
-        if (groups.length === 0) continue;
-
-        // إنشاء نسخة جديدة من المجموعات مع إزالة المعرفات
-        const groupsToInsert = groups.map((group) => ({
-          ...group,
-          questions: group.questions.map((question) => ({
-            ...question,
-            choices: question.choices.map((choice) => ({
-              ...choice,
-              _id: new mongoose.Types.ObjectId(),
-            })),
-          })),
-        }));
-
-        // إدخال المجموعات في المجموعات المجانية
-        const result = await FreeQuestionGroup.insertMany(groupsToInsert);
-        totalCopied += result.length;
+      if (!groups.length) {
+        return res.status(404).json({
+          message: 'لا توجد مجموعات أسئلة تحتوي على سؤال واحد',
+          totalCopied: 0
+        });
       }
 
+      // 3. Prepare for insertion (with new choice IDs)
+      const processedGroups = groups.map(group => ({
+        ...group,
+        questions: group.questions.map(question => ({
+          ...question,
+          choices: question.choices.map(choice => ({
+            ...choice,
+            _id: new mongoose.Types.ObjectId()
+          }))
+        }))
+      }));
+
+      // 4. Bulk insert
+      const result = await FreeQuestionGroup.insertMany(processedGroups);
+
       res.status(200).json({
-        message: `تم استبدال جميع المجموعات المجانية بنجاح وإضافة ${totalCopied} مجموعة جديدة.`,
-        totalCopied,
-        materialsProcessed: materials.length,
+        message: `تم نسخ ${result.length} مجموعة بنجاح`,
+        totalCopied: result.length
       });
     } catch (err) {
       res.status(500).json({
-        error: err.message || 'حدث خطأ أثناء معالجة الطلب.',
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+        error: err.message || 'حدث خطأ غير متوقع',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
       });
     }
-  },
+  }
 ];
