@@ -173,7 +173,7 @@ exports.getAccessibleCollegesByUniversity = async (req, res) => {
 // Get Accessible Materials
 exports.getAccessibleMaterials = async (req, res) => {
   try {
-    const { page = 1, limit = 10, college, year = 1 } = req.query;
+    const { college, year = 1 } = req.query;
 
     const student = await Student.findById(req.userId).select('redeemedCodes');
     if (!student) {
@@ -183,8 +183,10 @@ exports.getAccessibleMaterials = async (req, res) => {
     }
 
     const now = new Date();
-    const materialIds = new Set();
+    const questionMaterialIds = new Set();
+    const lectureMaterialIds = new Set();
 
+    // Separate materials into question and lecture categories
     for (const redemption of student.redeemedCodes) {
       const codesGroup = await CodesGroup.findOne({
         _id: redemption.codesGroup,
@@ -195,35 +197,50 @@ exports.getAccessibleMaterials = async (req, res) => {
 
       if (codesGroup) {
         codesGroup.materialsWithQuestions.forEach((id) =>
-          materialIds.add(id.toString())
+          questionMaterialIds.add(id.toString())
         );
         codesGroup.materialsWithLectures.forEach((id) =>
-          materialIds.add(id.toString())
+          lectureMaterialIds.add(id.toString())
         );
       }
     }
 
-    const materialIdsArray = Array.from(materialIds).map(
+    // Convert to arrays of ObjectIds
+    const questionIdsArray = Array.from(questionMaterialIds).map(
       (id) => new mongoose.Types.ObjectId(id)
     );
-
-    const materials = await Material.paginate(
-      { _id: { $in: materialIdsArray }, college, year },
-      {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
-        populate: { path: 'college', select: 'name' },
-        select: '-__v -createdAt -updatedAt',
-      }
+    const lectureIdsArray = Array.from(lectureMaterialIds).map(
+      (id) => new mongoose.Types.ObjectId(id)
     );
+    // Common filter for college and year
+    const baseFilter = { college, year };
 
-    res.status(200).json(materials);
+    // Fetch materials in parallel
+    const [materialsWithQuestions, materialsWithLectures] = await Promise.all([
+      Material.find({ ...baseFilter, _id: { $in: questionIdsArray } })
+        .populate({ path: 'college', select: 'name' })
+        .select('-__v -createdAt -updatedAt')
+        .lean(),
+
+      Material.find({ ...baseFilter, _id: { $in: lectureIdsArray } })
+        .populate({ path: 'college', select: 'name' })
+        .select('-__v -createdAt -updatedAt')
+        .lean(),
+    ]);
+
+    res.status(200).json({
+      materialsWithQuestions,
+      materialsWithLectures,
+      count: {
+        questions: materialsWithQuestions.length,
+        lectures: materialsWithLectures.length,
+      },
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: 'حدث خطأ في الخادم.' });
   }
 };
-
 // Get Accessible Questions
 exports.getAccessibleQuestions = async (req, res) => {
   try {
@@ -530,15 +547,15 @@ exports.getCourseFiles = async (req, res) => {
 
     if (student.redeemedCodes.length > 0) {
       const accessCheck = await CodesGroup.findOne({
-        'courses': courseId,
-        'expiration': { $gt: now },
-        '_id': { $in: student.redeemedCodes.map(rc => rc.codesGroup) },
-        'codes': {
+        courses: courseId,
+        expiration: { $gt: now },
+        _id: { $in: student.redeemedCodes.map((rc) => rc.codesGroup) },
+        codes: {
           $elemMatch: {
-            'value': { $in: student.redeemedCodes.map(rc => rc.code) },
-            'isUsed': true
-          }
-        }
+            value: { $in: student.redeemedCodes.map((rc) => rc.code) },
+            isUsed: true,
+          },
+        },
       });
 
       hasAccess = !!accessCheck;
@@ -550,22 +567,21 @@ exports.getCourseFiles = async (req, res) => {
       .lean();
 
     // Format response based on access
-    const formattedFiles = courseFiles.map(file => ({
+    const formattedFiles = courseFiles.map((file) => ({
       _id: file._id,
       num: file.num,
       course: file.course,
       file: {
         filename: file.file.filename,
-        ...(hasAccess && { accessUrl: file.file.accessUrl })
+        ...(hasAccess && { accessUrl: file.file.accessUrl }),
       },
-      createdAt: file.createdAt
+      createdAt: file.createdAt,
     }));
 
     res.status(200).json({
       hasAccess,
-      files: formattedFiles
+      files: formattedFiles,
     });
-
   } catch (err) {
     console.error('Error in getCourseFiles:', err);
     res.status(500).json({ error: 'حدث خطأ في الخادم.' });
