@@ -209,12 +209,12 @@ const validateSignup = [
 const validateLogin = [
   body('email').notEmpty().withMessage('البريد الالكتروني مطلوب.'),
   body('password').trim().notEmpty().withMessage('كلمة المرور مطلوبة.'),
-  body('deviceId')
-    .trim()
-    .notEmpty()
-    .withMessage('رمز deviceId مطلوب')
-    .isString()
-    .withMessage('رمز deviceId يجب أن يكون نصاً'),
+  // body('deviceId')
+  //   .trim()
+  //   .notEmpty()
+  //   .withMessage('رمز deviceId مطلوب')
+  //   .isString()
+  //   .withMessage('رمز deviceId يجب أن يكون نصاً'),
 ];
 
 exports.signup = [
@@ -400,11 +400,11 @@ exports.login = [
           .status(401)
           .json({ message: 'بيانات تسجيل الدخول غير صالحة!' });
       }
-      if (loadedStudent.deviceId !== deviceId) {
-        return res
-          .status(401)
-          .json({ message: 'لا يمكن فتح الحساب من جهاز مختلف' });
-      }
+      // if (loadedStudent.deviceId !== deviceId) {
+      //   return res
+      //     .status(401)
+      //     .json({ message: 'لا يمكن فتح الحساب من جهاز مختلف' });
+      // }
 
       const token = jwt.sign(
         {
